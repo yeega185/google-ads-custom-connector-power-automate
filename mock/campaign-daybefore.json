@@ -1,0 +1,42 @@
+{
+  "_meta": {
+    "description": "模擬 GetCampaignPerformance 查詢前前日（2026-05-30）Campaign 3333 的成效資料",
+    "usage": "對應 CTR_FLUCTUATION 條件中，取前前日 CTR 的 API 呼叫",
+    "ctr_calculation": {
+      "ctrDayBefore": 0.035,
+      "note": "搭配 campaign-yesterday.json（CTR=0.038）與 campaign-today.json（CTR=0.021）計算波動",
+      "full_calculation": {
+        "diffToday": "0.021 - 0.038 = -0.017（今日 CTR 差值）",
+        "diffYesterday": "0.038 - 0.035 = 0.003（昨日 CTR 差值）",
+        "changeRate": "(-0.017 - 0.003) / |0.003| = -0.020 / 0.003 = -6.667 = -667%",
+        "threshold": "±20% = ±0.2",
+        "anomaly": true,
+        "result": "-667% 遠低於 -20% 門檻，CTR_FLUCTUATION 異常觸發"
+      }
+    }
+  },
+  "results": [
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/3333",
+        "id": "3333",
+        "name": "2026_Brand_TW",
+        "status": "ENABLED",
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31"
+      },
+      "metrics": {
+        "costMicros": "20500000",
+        "impressions": "9900",
+        "clicks": "347",
+        "ctr": 0.035,
+        "conversions": 5.0
+      },
+      "segments": {
+        "date": "2026-05-30"
+      }
+    }
+  ],
+  "fieldMask": "campaign.id,campaign.name,campaign.status,metrics.cost_micros,metrics.impressions,metrics.clicks,metrics.ctr,metrics.conversions,segments.date",
+  "requestId": "mock-campaign-daybefore-20260530"
+}

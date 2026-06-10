@@ -1,0 +1,55 @@
+{
+  "_meta": {
+    "description": "模擬 GetCampaignPerformance 查詢今日（2026-06-01）成效資料",
+    "usage": "在 Power Automate 中，以 Compose Action 貼入此 JSON，取代 Custom Connector 呼叫，再接 Parse JSON 即可模擬正式流程",
+    "scenarios": {
+      "campaign_1111": "COST_ZERO 觸發 — costMicros=0，上線日 2026-05-28（超過 48 小時），應判定為異常",
+      "campaign_3333": "CTR_FLUCTUATION 今日資料 — CTR=0.021（2.1%），需搭配 campaign-yesterday.json 與 campaign-daybefore.json 計算波動"
+    },
+    "note": "costMicros 為 Google Ads API 實際單位，NT$1 = 1,000,000 micros"
+  },
+  "results": [
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/1111",
+        "id": "1111",
+        "name": "2026_NewProduct_TW",
+        "status": "ENABLED",
+        "startDate": "2026-05-28",
+        "endDate": "2026-07-31"
+      },
+      "metrics": {
+        "costMicros": "0",
+        "impressions": "320",
+        "clicks": "6",
+        "ctr": 0.01875,
+        "conversions": 0.0
+      },
+      "segments": {
+        "date": "2026-06-01"
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/3333",
+        "id": "3333",
+        "name": "2026_Brand_TW",
+        "status": "ENABLED",
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31"
+      },
+      "metrics": {
+        "costMicros": "18500000",
+        "impressions": "9800",
+        "clicks": "206",
+        "ctr": 0.021,
+        "conversions": 5.0
+      },
+      "segments": {
+        "date": "2026-06-01"
+      }
+    }
+  ],
+  "fieldMask": "campaign.id,campaign.name,campaign.status,campaign.start_date,campaign.end_date,metrics.cost_micros,metrics.impressions,metrics.clicks,metrics.ctr,metrics.conversions,segments.date",
+  "requestId": "mock-campaign-today-20260601"
+}

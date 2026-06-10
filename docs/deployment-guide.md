@@ -1,0 +1,245 @@
+# 專案部署指南 / Project Deployment Guide
+
+本文件說明 **Google Ads 廣告異常監控自動化系統**的完整部署流程，涵蓋 Power Automate Flow 匯入、Custom Connector 建立，以及為什麼本專案採用 JSON MockData 方式進行驗證。
+
+This guide covers the full deployment of the **Google Ads Anomaly Monitoring Automation System**, including Power Automate Flow import, Custom Connector setup, and the reasoning behind the JSON MockData approach used in this project.
+
+---
+
+## 專案組成 / Project Components
+
+本系統由以下三個部分組成：
+
+| 元件 | 說明 | 檔案位置 |
+|-----|------|---------|
+| Power Automate Flow | 每日排程執行，判斷異常並發送 Email | `flow/GoogleAds_AbnormalMonitor_Daily.json` |
+| Custom Connector | 定義 Google Ads API 的呼叫方式（GAQL 查詢） | `connector/apiDefinition.swagger.json` |
+| Mock 資料 | 符合 API 回傳格式的測試用 JSON | `mock/*.json` |
+
+> **本 Repo 提供的 Flow 為 MockData 版本**，所有 Google Ads 資料來源已以 Compose Action 內嵌 JSON 取代真實 API 呼叫。原因詳見下方說明。
+
+---
+
+## 為什麼使用 MockData？/ Why MockData?
+
+### Google Ads API 沒有測試 Token 或沙箱環境
+
+在開發初期，原計畫以 Custom Connector 直接呼叫 Google Ads API，並以 Developer Token 進行測試。實際嘗試後，發現以下限制：
+
+**Google Ads API does not provide test tokens or a sandbox environment.**
+
+| 限制 | 說明 |
+|-----|------|
+| Developer Token 審核制 | 新申請的 Token 在通過 Google 人工審核前，僅允許存取 **Test Account**（測試帳戶），無法查詢真實帳戶資料 |
+| Test Account 資料不足 | Test Account 內無真實廣告活動資料，無法產生「花費超標」「CTR 劇烈波動」「CPA 異常」等需要驗證的異常情境 |
+| 申請流程耗時 | Developer Token 升級為正式授權需提交使用說明並等待 Google 審核，無法在開發期間完成 |
+
+### 解決方案：Compose Action 內嵌 MockData
+
+為了在不使用真實 API 的情況下完整驗證 Flow 的所有監控邏輯，本專案採用以下方式：
+
+1. 在 Flow 中，以 **Compose Action**（撰寫）取代 Custom Connector 呼叫
+2. 每個 Compose Action 內嵌一份符合 Google Ads API 實際回傳格式的 JSON 資料
+3. 後續的所有邏輯（Filter Array、條件判斷、Email 組裝、CSV 產生）均接在 Compose 之後，行為與串接真實 API 完全一致
+
+這樣的設計讓整個 Flow 邏輯可以被完整執行與驗證，而不受 API 憑證限制影響。
+
+**Flow 中的 MockData 步驟對應：**
+
+| Flow 步驟名稱 | 對應監控條件 | 對應 mock 參考檔 |
+|------------|------------|----------------|
+| `COST_ZERO_MockData` | 花費為零偵測 | `mock/campaign-today.json` |
+| `BUDGET_OVERSPEND_MockData` | 累積花費超標 | `mock/campaign-cumulative.json` |
+| `CTR_FLUCTUATION_MockData` | CTR 波動偵測（含今日/昨日/前日） | `mock/campaign-yesterday.json` |
+| `SEM_HIGH_CPA_MockData` | 關鍵字 CPA 異常 | `mock/keyword-cpa-14days.json` |
+
+---
+
+## 部署步驟一：匯入 Flow / Import the Flow
+
+### 前置條件
+- Power Automate Premium 或 Per-Flow 授權
+- Office 365 帳戶（用於發送通知 Email）
+
+### 步驟
+
+1. 登入 [Power Automate](https://make.powerautomate.com)
+2. 左側選單 → 「我的流程」
+3. 上方「匯入」→「匯入套件（舊版）」
+4. 上傳 `flow/GoogleAds_AbnormalMonitor_Daily.json`
+
+   > 若系統要求 `.zip` 格式，請先將 JSON 檔包成 zip 再上傳，或改用「從 JSON 建立」選項。
+
+5. 匯入後，開啟 Flow 確認以下設定：
+
+   | 設定項目 | 預期值 |
+   |--------|-------|
+   | 觸發器類型 | Recurrence（每日） |
+   | 觸發時間 | 每日 09:00 UTC+8（JSON 中為 `01:00Z`） |
+   | 收件人 Email | 預設為 `your-email@example.com`，請依實際需求修改 |
+
+6. 開啟 `傳送電子郵件_(V2)` 步驟，確認 Office 365 連線已綁定正確帳號
+
+7. 儲存並手動執行一次，確認 Email 正常送出
+
+---
+
+## 部署步驟二：建立 Custom Connector / Setup Custom Connector
+
+Custom Connector 定義 Google Ads API 的呼叫介面，供未來替換 MockData 使用。**目前的 Flow（MockData 版）不需要此步驟即可執行。**
+
+### 匯入 Swagger 定義
+
+1. 登入 [Power Automate](https://make.powerautomate.com)
+2. 左側選單 → 「資料」→「自訂連接器」
+3. 右上角「新增自訂連接器」→「匯入 OpenAPI 檔案」
+4. 名稱：`GoogleAds-Monitor-Connector`
+5. 上傳 `connector/apiDefinition.swagger.json`
+6. 點擊「繼續」
+
+### 設定 General（一般）
+
+| 欄位 | 值 |
+|-----|---|
+| Connector name | `GoogleAds-Monitor-Connector` |
+| Host | `googleads.googleapis.com` |
+| Base URL | `/` |
+
+### 設定 Security（安全性）
+
+**Authentication type：OAuth 2.0**
+
+| 欄位 | 值 |
+|-----|---|
+| Identity Provider | Google |
+| Client ID | GCP 的 OAuth Client ID |
+| Client Secret | GCP 的 OAuth Client Secret |
+| Authorization URL | `https://accounts.google.com/o/oauth2/auth` |
+| Token URL | `https://oauth2.googleapis.com/token` |
+| Refresh URL | `https://oauth2.googleapis.com/token` |
+| Scope | `https://www.googleapis.com/auth/adwords` |
+
+> OAuth 憑證取得方式詳見 [oauth-setup.md](oauth-setup.md)
+
+### 確認 Definition（動作定義）
+
+切換至「Definition」頁籤，確認以下 Action 已正確載入：
+
+| Operation ID | 端點 |
+|-------------|-----|
+| `GoogleAdsSearch` | `POST /v18/customers/{customerId}/googleAds:search` |
+
+本 Connector 採**單一端點設計**，以 GAQL 查詢語法決定回傳資料，不需為每種監控條件設立獨立端點。
+
+### 建立 Connection（OAuth 授權）
+
+1. 左側選單 → 「資料」→「連接」→「新增連接」
+2. 搜尋 `GoogleAds-Monitor-Connector`
+3. 跳出 Google OAuth 授權畫面，登入具備 Google Ads 存取權的帳號
+4. 授權完成
+
+---
+
+## 部署步驟三：正式版替換（未來）/ Production Switch
+
+當 Google Ads Developer Token 完成審核、可存取真實帳戶後，依以下方式將 MockData 替換為真實 API 呼叫：
+
+| MockData Compose 步驟 | 替換為 | GAQL 查詢 |
+|----------------------|-------|---------|
+| `COST_ZERO_MockData` | `GoogleAdsSearch` Action | `SELECT campaign.id, campaign.name, campaign.start_date, metrics.cost_micros FROM campaign WHERE segments.date DURING YESTERDAY AND campaign.status = 'ENABLED'` |
+| `BUDGET_OVERSPEND_MockData` | `GoogleAdsSearch` Action | `SELECT campaign.id, campaign.name, campaign.start_date, campaign.end_date, campaign_budget.amount_micros, metrics.cost_micros FROM campaign WHERE segments.date DURING YESTERDAY AND campaign.status = 'ENABLED'` |
+| `CTR_FLUCTUATION_MockData` | `GoogleAdsSearch` Action | `SELECT campaign.id, campaign.name, metrics.ctr, segments.date FROM campaign WHERE segments.date DURING LAST_7_DAYS AND campaign.status = 'ENABLED'` |
+| `SEM_HIGH_CPA_MockData` | `GoogleAdsSearch` Action | `SELECT campaign.id, ad_group.id, ad_group.name, ad_group_criterion.keyword.text, ad_group_criterion.keyword.match_type, metrics.cost_per_conversion, metrics.conversions, metrics.cost_micros FROM ad_group_criterion WHERE segments.date DURING LAST_14_DAYS AND ad_group_criterion.type = 'KEYWORD' AND ad_group_criterion.status = 'ENABLED'` |
+
+替換時，後續的 Filter Array、條件判斷、Email 組裝步驟**完全不需修改**，因為 MockData 的 JSON Schema 與真實 API 回傳格式完全一致。
+
+---
+
+## 開發過程遭遇的限制與解法 / Development Limitations & Solutions
+
+以下記錄實際開發過程中遭遇的關鍵問題，供後續維護或正式部署參考。
+
+### 限制 1：Power Automate Expression 不支援 filter() 語法
+
+**問題：** 原本嘗試在 Condition 或 Compose 的 Expression 欄位中，以 `filter()` 函式直接對 API 結果做篩選：
+
+```
+filter(outputs('BUDGET_OVERSPEND')?['body/results'],
+  greaterOrEquals(int(item()?['metrics']?['costMicros']), int(item()?['campaignBudget']?['amountMicros']))
+)
+```
+
+Power Automate 的 Expression 引擎雖然支援 `filter()` 語法，但在 `filter()` 的條件參數裡使用 `item()` 參照時，實際執行會出錯或無法正確迭代每一筆資料。
+
+**解法：** 改用 Power Automate 的 **Filter Array（篩選陣列）Action** 或 **Apply to each（套用至各項）+ Condition（條件）** 組合：
+
+| 監控條件 | 改用方式 |
+|--------|---------|
+| COST_ZERO | 兩層 Filter Array Action 串接（先篩 costMicros = 0，再篩 startDate 在 48 小時內）|
+| BUDGET_OVERSPEND | Apply to each 迴圈 + Condition（在迴圈內計算 expectedCumNT 後判斷）|
+| SEM_HIGH_CPA | Filter Array Action（Query 類型，使用 `@or(greater(...), and(...))` 條件）|
+
+---
+
+### 限制 2：Custom Connector UI 識別提供者下拉選單無法載入
+
+**問題：** 在 Power Automate 網頁介面建立 Custom Connector 時，「Security」頁籤的「Identity Provider」下拉選單永遠空白，無論使用 Edge、Chrome 或重新整理都無法載入。嘗試從空白建立或用 Swagger Editor 匯入均失敗。
+
+**根本原因：** Microsoft 識別提供者服務在此網路環境無回應，與操作方式無關。
+
+**解法：** 改用 **pac CLI**（Microsoft 官方 Power Platform 開發者工具），同時匯入 `apiDefinition.swagger.json` 和 `apiProperties.json`，繞過故障的 UI：
+
+```powershell
+$pac = "C:\Users\User\AppData\Local\Microsoft\PowerAppsCLI\Microsoft.PowerApps.CLI.2.8.1\tools\pac.exe"
+
+# 登入
+& $pac auth create --name MyOrg
+
+# 建立 Connector
+& $pac connector create `
+  --api-definition-file "connector/apiDefinition.swagger.json" `
+  --api-properties-file "connector/apiProperties.json"
+
+# 更新（例如更新 Client Secret）
+& $pac connector update `
+  --connector-id "<connector-id>" `
+  --api-definition-file "connector/apiDefinition.swagger.json" `
+  --api-properties-file "connector/apiProperties.json"
+```
+
+> ⚠️ Client Secret 僅在執行 pac CLI 時暫時寫入 `apiProperties.json`，執行後立刻清除，絕對不 commit 到 GitHub。
+
+---
+
+### 限制 3：policyTemplateInstances 衝突
+
+**問題：** pac CLI 建立 Connector 時出現 `Ambiguous policy sections defined for policy template 'setheader'` 錯誤。
+
+**根本原因：** `apiDefinition.swagger.json` 已將 `developer-token` 定義為 Header 參數，`apiProperties.json` 又同時有 `setheader` policy 設定同一個 header，兩邊衝突。
+
+**解法：** 清空 `apiProperties.json` 的 `policyTemplateInstances` 陣列，改由 Flow 在呼叫 Action 時直接傳入 `developer-token`。
+
+---
+
+### 限制 4：redirect_uri_mismatch
+
+**問題：** 建立 Connection 授權時，Google 回傳 `400: redirect_uri_mismatch`。
+
+**解法：** 在 GCP → Credentials → OAuth Client → Authorized redirect URIs 新增：
+```
+https://global.consent.azure-apim.net/redirect
+https://global.consent.azure-apim.net/redirect/<connector-logical-name>
+```
+
+---
+
+## 常見問題 / Troubleshooting
+
+| 問題 | 原因 | 解決方式 |
+|-----|------|---------|
+| Flow 匯入後 Email 連線顯示錯誤 | Connection 未綁定或帳號不符 | 重新設定 `傳送電子郵件_(V2)` 的 Office 365 連線 |
+| Email 沒有收到 | anomalyCount 為 0，條件_4 不觸發 | MockData 中所有條件均已設計為會觸發，確認 Flow 未被修改 |
+| Swagger 匯入失敗 | JSON 格式錯誤 | 使用 [Swagger Editor](https://editor.swagger.io) 驗證格式 |
+| OAuth 授權後出現 400 錯誤 | Redirect URI 不符 | 確認 GCP 的 Redirect URI 含 `global.consent.azure-apim.net/redirect` |
+| API 呼叫回傳 404 | Developer Token 仍為測試狀態，測試 Token 只能存取 Test Account，對真實 Customer ID 查詢時 Google Ads API 會回傳 404（資源不存在） | 確認 Token 已通過 Google 審核，或先使用 MockData 版 Flow 進行驗證 |
+| GAQL 語法錯誤回傳 400 | 欄位名稱或 FROM 資源不符 | 至 [Google Ads Query Builder](https://developers.google.com/google-ads/api/fields/v18/overview_query_builder) 驗證語法 |

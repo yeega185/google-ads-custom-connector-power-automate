@@ -1,0 +1,35 @@
+{
+  "_meta": {
+    "description": "模擬 GetCampaignPerformance 查詢昨日（2026-05-31）Campaign 3333 的成效資料",
+    "usage": "對應 CTR_FLUCTUATION 條件中，取昨日 CTR 的 API 呼叫",
+    "ctr_calculation": {
+      "ctrYesterday": 0.038,
+      "ctrDayBefore": 0.035,
+      "diffYesterday": "0.038 - 0.035 = 0.003（昨日相較前前日 CTR 差值）"
+    }
+  },
+  "results": [
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/3333",
+        "id": "3333",
+        "name": "2026_Brand_TW",
+        "status": "ENABLED",
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31"
+      },
+      "metrics": {
+        "costMicros": "21000000",
+        "impressions": "10200",
+        "clicks": "388",
+        "ctr": 0.038,
+        "conversions": 6.0
+      },
+      "segments": {
+        "date": "2026-05-31"
+      }
+    }
+  ],
+  "fieldMask": "campaign.id,campaign.name,campaign.status,metrics.cost_micros,metrics.impressions,metrics.clicks,metrics.ctr,metrics.conversions,segments.date",
+  "requestId": "mock-campaign-yesterday-20260531"
+}

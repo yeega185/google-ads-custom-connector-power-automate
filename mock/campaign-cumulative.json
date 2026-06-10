@@ -1,0 +1,435 @@
+{
+  "_meta": {
+    "description": "模擬 GetCampaignPerformance 查詢 Campaign 2222 累積花費（2026-05-13 ～ 2026-06-01）",
+    "usage": "對應 BUDGET_OVERSPEND 條件的 API 呼叫，查詢期間為 CampaignStartDate 至今日",
+    "scenario": {
+      "campaign_2222": {
+        "TotalBudget": 100000,
+        "CampaignStartDate": "2026-05-13",
+        "CampaignEndDate": "2026-06-01",
+        "totalDays": 20,
+        "elapsedDays": 20,
+        "dailyExpected": 5000,
+        "expectedCumulative": 100000,
+        "anomalyThreshold_110pct": 110000,
+        "actualCumulative_fromMicros": 120000,
+        "costMicros_value": "120000000000",
+        "result": "120000 > 110000 → BUDGET_OVERSPEND 異常觸發"
+      }
+    },
+    "note": "此回傳為累積加總，Google Ads API 在查詢多日時每日一筆，Flow 中需加總 costMicros 後除以 1000000"
+  },
+  "results": [
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale",
+        "status": "ENABLED",
+        "startDate": "2026-05-13",
+        "endDate": "2026-06-01"
+      },
+      "metrics": {
+        "costMicros": "7200000000",
+        "impressions": "85000",
+        "clicks": "4250",
+        "ctr": 0.05,
+        "conversions": 85.0
+      },
+      "segments": {
+        "date": "2026-05-13"
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale",
+        "status": "ENABLED",
+        "startDate": "2026-05-13",
+        "endDate": "2026-06-01"
+      },
+      "metrics": {
+        "costMicros": "6800000000",
+        "impressions": "82000",
+        "clicks": "4100",
+        "ctr": 0.05,
+        "conversions": 80.0
+      },
+      "segments": {
+        "date": "2026-05-14"
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale",
+        "status": "ENABLED",
+        "startDate": "2026-05-13",
+        "endDate": "2026-06-01"
+      },
+      "metrics": {
+        "costMicros": "5800000000",
+        "impressions": "78000",
+        "clicks": "3900",
+        "ctr": 0.05,
+        "conversions": 75.0
+      },
+      "segments": {
+        "date": "2026-05-15"
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale",
+        "status": "ENABLED",
+        "startDate": "2026-05-13",
+        "endDate": "2026-06-01"
+      },
+      "metrics": {
+        "costMicros": "6100000000",
+        "impressions": "80000",
+        "clicks": "4000",
+        "ctr": 0.05,
+        "conversions": 78.0
+      },
+      "segments": {
+        "date": "2026-05-16"
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale",
+        "status": "ENABLED",
+        "startDate": "2026-05-13",
+        "endDate": "2026-06-01"
+      },
+      "metrics": {
+        "costMicros": "5900000000",
+        "impressions": "79000",
+        "clicks": "3950",
+        "ctr": 0.05,
+        "conversions": 76.0
+      },
+      "segments": {
+        "date": "2026-05-17"
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale",
+        "status": "ENABLED",
+        "startDate": "2026-05-13",
+        "endDate": "2026-06-01"
+      },
+      "metrics": {
+        "costMicros": "6200000000",
+        "impressions": "81000",
+        "clicks": "4050",
+        "ctr": 0.05,
+        "conversions": 79.0
+      },
+      "segments": {
+        "date": "2026-05-18"
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale",
+        "status": "ENABLED",
+        "startDate": "2026-05-13",
+        "endDate": "2026-06-01"
+      },
+      "metrics": {
+        "costMicros": "6500000000",
+        "impressions": "83000",
+        "clicks": "4150",
+        "ctr": 0.05,
+        "conversions": 82.0
+      },
+      "segments": {
+        "date": "2026-05-19"
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale",
+        "status": "ENABLED",
+        "startDate": "2026-05-13",
+        "endDate": "2026-06-01"
+      },
+      "metrics": {
+        "costMicros": "6300000000",
+        "impressions": "82000",
+        "clicks": "4100",
+        "ctr": 0.05,
+        "conversions": 80.0
+      },
+      "segments": {
+        "date": "2026-05-20"
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale",
+        "status": "ENABLED",
+        "startDate": "2026-05-13",
+        "endDate": "2026-06-01"
+      },
+      "metrics": {
+        "costMicros": "6100000000",
+        "impressions": "80500",
+        "clicks": "4025",
+        "ctr": 0.05,
+        "conversions": 78.0
+      },
+      "segments": {
+        "date": "2026-05-21"
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale",
+        "status": "ENABLED",
+        "startDate": "2026-05-13",
+        "endDate": "2026-06-01"
+      },
+      "metrics": {
+        "costMicros": "6400000000",
+        "impressions": "82500",
+        "clicks": "4125",
+        "ctr": 0.05,
+        "conversions": 81.0
+      },
+      "segments": {
+        "date": "2026-05-22"
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale",
+        "status": "ENABLED",
+        "startDate": "2026-05-13",
+        "endDate": "2026-06-01"
+      },
+      "metrics": {
+        "costMicros": "6250000000",
+        "impressions": "81000",
+        "clicks": "4050",
+        "ctr": 0.05,
+        "conversions": 79.0
+      },
+      "segments": {
+        "date": "2026-05-23"
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale",
+        "status": "ENABLED",
+        "startDate": "2026-05-13",
+        "endDate": "2026-06-01"
+      },
+      "metrics": {
+        "costMicros": "6350000000",
+        "impressions": "82000",
+        "clicks": "4100",
+        "ctr": 0.05,
+        "conversions": 80.0
+      },
+      "segments": {
+        "date": "2026-05-24"
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale",
+        "status": "ENABLED",
+        "startDate": "2026-05-13",
+        "endDate": "2026-06-01"
+      },
+      "metrics": {
+        "costMicros": "6150000000",
+        "impressions": "80000",
+        "clicks": "4000",
+        "ctr": 0.05,
+        "conversions": 78.0
+      },
+      "segments": {
+        "date": "2026-05-25"
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale",
+        "status": "ENABLED",
+        "startDate": "2026-05-13",
+        "endDate": "2026-06-01"
+      },
+      "metrics": {
+        "costMicros": "6050000000",
+        "impressions": "79500",
+        "clicks": "3975",
+        "ctr": 0.05,
+        "conversions": 77.0
+      },
+      "segments": {
+        "date": "2026-05-26"
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale",
+        "status": "ENABLED",
+        "startDate": "2026-05-13",
+        "endDate": "2026-06-01"
+      },
+      "metrics": {
+        "costMicros": "6450000000",
+        "impressions": "83000",
+        "clicks": "4150",
+        "ctr": 0.05,
+        "conversions": 82.0
+      },
+      "segments": {
+        "date": "2026-05-27"
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale",
+        "status": "ENABLED",
+        "startDate": "2026-05-13",
+        "endDate": "2026-06-01"
+      },
+      "metrics": {
+        "costMicros": "6600000000",
+        "impressions": "84000",
+        "clicks": "4200",
+        "ctr": 0.05,
+        "conversions": 83.0
+      },
+      "segments": {
+        "date": "2026-05-28"
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale",
+        "status": "ENABLED",
+        "startDate": "2026-05-13",
+        "endDate": "2026-06-01"
+      },
+      "metrics": {
+        "costMicros": "6700000000",
+        "impressions": "85500",
+        "clicks": "4275",
+        "ctr": 0.05,
+        "conversions": 84.0
+      },
+      "segments": {
+        "date": "2026-05-29"
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale",
+        "status": "ENABLED",
+        "startDate": "2026-05-13",
+        "endDate": "2026-06-01"
+      },
+      "metrics": {
+        "costMicros": "6800000000",
+        "impressions": "86000",
+        "clicks": "4300",
+        "ctr": 0.05,
+        "conversions": 85.0
+      },
+      "segments": {
+        "date": "2026-05-30"
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale",
+        "status": "ENABLED",
+        "startDate": "2026-05-13",
+        "endDate": "2026-06-01"
+      },
+      "metrics": {
+        "costMicros": "6900000000",
+        "impressions": "87000",
+        "clicks": "4350",
+        "ctr": 0.05,
+        "conversions": 86.0
+      },
+      "segments": {
+        "date": "2026-05-31"
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale",
+        "status": "ENABLED",
+        "startDate": "2026-05-13",
+        "endDate": "2026-06-01"
+      },
+      "metrics": {
+        "costMicros": "7000000000",
+        "impressions": "88000",
+        "clicks": "4400",
+        "ctr": 0.05,
+        "conversions": 87.0
+      },
+      "segments": {
+        "date": "2026-06-01"
+      }
+    }
+  ],
+  "_calculation_check": {
+    "note": "Flow 中加總所有 costMicros 後 ÷ 1,000,000 得到累積花費",
+    "total_costMicros_sum": "120000000000",
+    "actual_cumulative_NT": 120000,
+    "expected_cumulative_NT": 100000,
+    "threshold_110pct_NT": 110000,
+    "anomaly": true,
+    "overspend_pct": "20%"
+  },
+  "fieldMask": "campaign.id,campaign.name,campaign.status,campaign.start_date,campaign.end_date,metrics.cost_micros,metrics.impressions,metrics.clicks,metrics.ctr,metrics.conversions,segments.date",
+  "requestId": "mock-campaign-cumulative-20260601"
+}

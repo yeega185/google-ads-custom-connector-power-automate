@@ -1,0 +1,31 @@
+# 憑證與機密資訊
+client_secret.json
+client_secret_*.json
+credentials.json
+token.json
+refresh_token.txt
+*.key
+*.pem
+*.p12
+
+# 含真實客戶資料的設定
+config.prod.json
+config.local.json
+.env
+.env.local
+.env.production
+
+# 系統檔案
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 編輯器
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 暫存
+*.tmp
+*.log

@@ -1,0 +1,764 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_e1f29"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "frequency": "Day",
+            "interval": "1",
+            "startTime": "2026-06-09T01:00:00Z"
+          }
+        }
+      },
+      "actions": {
+        "alertContent": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "alertContent",
+                "type": "string",
+                "value": "<table border=\"1\" cellpadding=\"6\" cellspacing=\"0\"><tr><th>監控類別</th><th>監控項目</th><th>狀態</th><th>異常程度</th></tr>\n"
+              }
+            ]
+          },
+          "runAfter": {}
+        },
+        "anomalyCount": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "anomalyCount",
+                "type": "integer",
+                "value": 0
+              }
+            ]
+          },
+          "runAfter": {
+            "alertContent": [
+              "Succeeded"
+            ]
+          }
+        },
+        "套用至各項": {
+          "type": "Foreach",
+          "foreach": "@outputs('BUDGET_OVERSPEND_MockData')?['results']\r\n",
+          "actions": {
+            "campaignDays": {
+              "type": "Compose",
+              "inputs": "@max(1, div(sub(ticks(item()?['campaign']?['endDate']), ticks(item()?['campaign']?['startDate'])), 864000000000))\r\n"
+            },
+            "expectedDaily": {
+              "type": "Compose",
+              "inputs": "@div(int(item()?['campaignBudget']?['amountMicros']), 1000000)\r\n",
+              "runAfter": {
+                "campaignDays": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "條件_1": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "equals": [
+                      "@greater(outputs('actualCumCostNT'), mul(outputs('expectedCumNT'), 1.1))\r\n",
+                      true
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "遞增變數_1": {
+                  "type": "IncrementVariable",
+                  "inputs": {
+                    "name": "anomalyCount",
+                    "value": 1
+                  }
+                },
+                "附加至字串變數_1": {
+                  "type": "AppendToStringVariable",
+                  "inputs": {
+                    "name": "alertContent",
+                    "value": "<tr><td>廣告累積花費異常</td><td>@{item()?['campaign']?['name']} 累積花費 NT$@{first(split(string(outputs('actualCumCostNT')), '.'))} 超出預算門檻 NT$@{first(split(string(mul(outputs('expectedCumNT'), 1.1)), '.'))}（超標 +@{first(split(string(sub(div(mul(outputs('actualCumCostNT'), 100), mul(outputs('expectedCumNT'), 1.1)), 100)), '.'))}%）</td><td>異常</td><td>高</td></tr>\n"
+                  },
+                  "runAfter": {
+                    "遞增變數_1": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "actions": {}
+              },
+              "runAfter": {
+                "expectedCumNT": [
+                  "SUCCEEDED"
+                ]
+              }
+            },
+            "actualCumCostNT": {
+              "type": "Compose",
+              "inputs": "@div(int(item()?['metrics']?['costMicros']), 1000000)",
+              "runAfter": {
+                "expectedDaily": [
+                  "SUCCEEDED"
+                ]
+              }
+            },
+            "dailyExpectedNT": {
+              "type": "Compose",
+              "inputs": "@div(outputs('expectedDaily'), outputs('campaignDays'))",
+              "runAfter": {
+                "actualCumCostNT": [
+                  "SUCCEEDED"
+                ]
+              }
+            },
+            "elapsedDays": {
+              "type": "Compose",
+              "inputs": "@min(outputs('campaignDays'), max(1, div(sub(ticks(utcNow()), ticks(item()?['campaign']?['startDate'])), 864000000000)))\r\n",
+              "runAfter": {
+                "dailyExpectedNT": [
+                  "SUCCEEDED"
+                ]
+              }
+            },
+            "expectedCumNT": {
+              "type": "Compose",
+              "inputs": "@mul(outputs('dailyExpectedNT'), outputs('elapsedDays'))",
+              "runAfter": {
+                "elapsedDays": [
+                  "SUCCEEDED"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "BUDGET_OVERSPEND_MockData": [
+              "SUCCEEDED"
+            ]
+          }
+        },
+        "條件_2": {
+          "type": "If",
+          "expression": {
+            "or": [
+              {
+                "greater": [
+                  "@float(first(body('todayResults'))?['metrics']?['ctr'])",
+                  "@mul(float(first(body('yesterdayResults'))?['metrics']?['ctr']), 1.2)"
+                ]
+              },
+              {
+                "less": [
+                  "@float(first(body('todayResults'))?['metrics']?['ctr'])",
+                  "@mul(float(first(body('yesterdayResults'))?['metrics']?['ctr']), 0.8)"
+                ]
+              }
+            ]
+          },
+          "actions": {
+            "遞增變數_2": {
+              "type": "IncrementVariable",
+              "inputs": {
+                "name": "anomalyCount",
+                "value": 1
+              }
+            },
+            "CTR": {
+              "type": "AppendToStringVariable",
+              "inputs": {
+                "name": "alertContent",
+                "value": "<tr><td>CTR 成效異常</td><td>CampaignID：@{first(body('todayResults'))?['campaign']?['id']}</td><td>異常</td><td>@{concat(first(split(string(div(mul(sub(mul(first(body('todayResults'))?['metrics']?['ctr'], 10000), mul(first(body('yesterdayResults'))?['metrics']?['ctr'], 10000)), 100), mul(first(body('yesterdayResults'))?['metrics']?['ctr'], 10000))), '.')), '%')}</td></tr>"
+              },
+              "runAfter": {
+                "遞增變數_2": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "else": {
+            "actions": {}
+          },
+          "runAfter": {
+            "dayBeforeResults": [
+              "SUCCEEDED"
+            ]
+          }
+        },
+        "targetCPA": {
+          "type": "Compose",
+          "inputs": 500,
+          "runAfter": {
+            "SEM_HIGH_CPA_MockData": [
+              "Succeeded"
+            ]
+          }
+        },
+        "條件_3": {
+          "type": "If",
+          "expression": {
+            "and": [
+              {
+                "greater": [
+                  "@length(body('highCPAKeywords'))",
+                  0
+                ]
+              }
+            ]
+          },
+          "actions": {
+            "遞增變數_3": {
+              "type": "IncrementVariable",
+              "inputs": {
+                "name": "anomalyCount",
+                "value": 1
+              }
+            },
+            "SEM": {
+              "type": "AppendToStringVariable",
+              "inputs": {
+                "name": "alertContent",
+                "value": "<tr><td>SEM 差勁關鍵字</td><td>CampaignID：@{first(body('highCPAKeywords'))?['campaign']?['id']} / AdGroup：@{first(body('highCPAKeywords'))?['adGroup']?['name']}</td><td>異常</td><td>SEM差勁關鍵字附件.csv</td></tr>\n"
+              },
+              "runAfter": {
+                "遞增變數_3": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "建立_CSV_資料表": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('選取')",
+                "format": "CSV"
+              },
+              "runAfter": {
+                "選取": [
+                  "SUCCEEDED"
+                ]
+              }
+            },
+            "選取": {
+              "type": "Select",
+              "inputs": {
+                "from": "@body('highCPAKeywords')",
+                "select": {
+                  "Campaign": "@item()?['campaign']?['name']",
+                  "AdGroup": "@\titem()?['adGroup']?['name']",
+                  "Keyword": "@item()?['adGroupCriterion']?['keyword']?['text']",
+                  "MatchType": "@item()?['adGroupCriterion']?['keyword']?['matchType']",
+                  "CostMicros": "@item()?['metrics']?['costMicros']",
+                  "Conversions": "@item()?['metrics']?['conversions']",
+                  "CostPerConversion": "@item()?['metrics']?['costPerConversion']"
+                }
+              },
+              "runAfter": {
+                "SEM": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "附加至字串變數_5": {
+              "type": "AppendToStringVariable",
+              "inputs": {
+                "name": "alertContent",
+                "value": "</table><br><br><strong>【SEM 差勁關鍵字明細】</strong><table border=\"1\" style=\"border-collapse:collapse\"><tr><th>Campaign</th><th>AdGroup</th><th>關鍵字</th><th>比對類型</th><th>CPA (NT$)</th></tr>\n"
+              },
+              "runAfter": {
+                "建立_CSV_資料表": [
+                  "SUCCEEDED"
+                ]
+              }
+            },
+            "套用至各項_1": {
+              "type": "Foreach",
+              "foreach": "@body('highCPAKeywords')",
+              "actions": {
+                "每筆關鍵字": {
+                  "type": "AppendToStringVariable",
+                  "inputs": {
+                    "name": "alertContent",
+                    "value": "<tr><td>@{item()?['campaign']?['id']}</td><td>@{item()?['adGroup']?['name']}</td><td>@{item()?['adGroupCriterion']?['keyword']?['text']}</td><td>@{item()?['adGroupCriterion']?['keyword']?['matchType']}</td><td>@{item()?['metrics']?['costPerConversion']}</td></tr>\n"
+                  }
+                }
+              },
+              "runAfter": {
+                "附加至字串變數_5": [
+                  "SUCCEEDED"
+                ]
+              }
+            }
+          },
+          "else": {
+            "actions": {}
+          },
+          "runAfter": {
+            "highCPAKeywords": [
+              "Succeeded"
+            ]
+          }
+        },
+        "條件_4": {
+          "type": "If",
+          "expression": {
+            "and": [
+              {
+                "greater": [
+                  "@int(variables('anomalyCount'))",
+                  0
+                ]
+              }
+            ]
+          },
+          "actions": {
+            "傳送電子郵件_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "your-email@example.com",
+                  "emailMessage/Subject": "@{concat('[Google Ads 異常監控] ', formatDateTime(utcNow(), 'yyyy/MM/dd'), ' 發現 ', string(variables('anomalyCount')), ' 組異常')}\n",
+                  "emailMessage/Body": "<p>最近監控時間為 <b>@{formatDateTime(utcNow(), 'yyyyMMdd')}</b>，發現 <b>@{variables('anomalyCount')}</b> 組異常情況。</p><br>@{variables('alertContent')}<br><p>此信件由系統自動產生，請勿回覆。</p><br>",
+                  "emailMessage/Attachments": [
+                    {
+                      "Name": "SEM差勤關鍵字附件.csv",
+                      "ContentBytes": "@concat(decodeUriComponent('%EF%BB%BF'), body('建立_CSV_資料表'))"
+                    }
+                  ],
+                  "emailMessage/Importance": "Normal"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              }
+            }
+          },
+          "else": {
+            "actions": {}
+          },
+          "runAfter": {
+            "關閉明細表": [
+              "SUCCEEDED"
+            ]
+          }
+        },
+        "COST_ZERO_MockData": {
+          "type": "Compose",
+          "inputs": {
+            "results": [
+              {
+                "campaign": {
+                  "resourceName": "customers/1234567890/campaigns/1111",
+                  "id": "1111",
+                  "name": "2026_NewProduct_TW",
+                  "status": "ENABLED",
+                  "startDate": "2026-05-28",
+                  "endDate": "2026-07-31"
+                },
+                "metrics": {
+                  "costMicros": "0",
+                  "impressions": "320",
+                  "clicks": "6",
+                  "ctr": 0.01875,
+                  "conversions": 0
+                },
+                "segments": {
+                  "date": "2026-06-01"
+                }
+              },
+              {
+                "campaign": {
+                  "resourceName": "customers/1234567890/campaigns/3333",
+                  "id": "3333",
+                  "name": "2026_Brand_TW",
+                  "status": "ENABLED",
+                  "startDate": "2026-01-01",
+                  "endDate": "2026-12-31"
+                },
+                "metrics": {
+                  "costMicros": "18500000",
+                  "impressions": "9800",
+                  "clicks": "206",
+                  "ctr": 0.021,
+                  "conversions": 5
+                },
+                "segments": {
+                  "date": "2026-06-01"
+                }
+              }
+            ],
+            "fieldMask": "campaign.id,campaign.name,campaign.status,campaign.start_date,campaign.end_date,metrics.cost_micros,metrics.impressions,metrics.clicks,metrics.ctr,metrics.conversions,segments.date",
+            "requestId": "mock-campaign-today-20260601"
+          },
+          "runAfter": {
+            "anomalyCount": [
+              "Succeeded"
+            ]
+          }
+        },
+        "BUDGET_OVERSPEND_MockData": {
+          "type": "Compose",
+          "inputs": {
+            "results": [
+              {
+                "campaign": {
+                  "resourceName": "customers/1234567890/campaigns/2222",
+                  "id": "2222",
+                  "name": "2026_Summer_Sale",
+                  "status": "ENABLED",
+                  "startDate": "2026-05-13",
+                  "endDate": "2026-06-01"
+                },
+                "campaignBudget": {
+                  "amountMicros": "100000000000"
+                },
+                "metrics": {
+                  "costMicros": "120000000000"
+                }
+              }
+            ],
+            "fieldMask": "campaign.id,campaign.name,campaign.status,campaign.start_date,campaign.end_date,campaign_budget.amount_micros,metrics.cost_micros",
+            "requestId": "mock-campaign-cumulative-20260601"
+          },
+          "runAfter": {
+            "條件": [
+              "Succeeded"
+            ]
+          }
+        },
+        "CTR_FLUCTUATION_MockData": {
+          "type": "Compose",
+          "inputs": {
+            "results": [
+              {
+                "campaign": {
+                  "id": "3333",
+                  "name": "2026_Brand_TW",
+                  "status": "ENABLED"
+                },
+                "metrics": {
+                  "ctr": 0.035
+                },
+                "segments": {
+                  "date": "2026-06-08"
+                }
+              },
+              {
+                "campaign": {
+                  "id": "3333",
+                  "name": "2026_Brand_TW",
+                  "status": "ENABLED"
+                },
+                "metrics": {
+                  "ctr": 0.038
+                },
+                "segments": {
+                  "date": "2026-06-09"
+                }
+              },
+              {
+                "campaign": {
+                  "id": "3333",
+                  "name": "2026_Brand_TW",
+                  "status": "ENABLED"
+                },
+                "metrics": {
+                  "ctr": 0.021
+                },
+                "segments": {
+                  "date": "2026-06-10"
+                }
+              }
+            ]
+          },
+          "runAfter": {
+            "套用至各項": [
+              "Succeeded"
+            ]
+          }
+        },
+        "SEM_HIGH_CPA_MockData": {
+          "type": "Compose",
+          "inputs": {
+            "results": [
+              {
+                "campaign": {
+                  "id": "2222",
+                  "name": "2026_Summer_Sale"
+                },
+                "adGroup": {
+                  "id": "3333",
+                  "name": "競品關鍵字組"
+                },
+                "adGroupCriterion": {
+                  "criterionId": "101",
+                  "keyword": {
+                    "text": "品牌A 競品",
+                    "matchType": "BROAD"
+                  }
+                },
+                "metrics": {
+                  "costMicros": "14400000000",
+                  "conversions": 20,
+                  "costPerConversion": 720
+                }
+              },
+              {
+                "campaign": {
+                  "id": "2222",
+                  "name": "2026_Summer_Sale"
+                },
+                "adGroup": {
+                  "id": "3333",
+                  "name": "競品關鍵字組"
+                },
+                "adGroupCriterion": {
+                  "criterionId": "102",
+                  "keyword": {
+                    "text": "優惠 折扣",
+                    "matchType": "PHRASE"
+                  }
+                },
+                "metrics": {
+                  "costMicros": "8000000000",
+                  "conversions": 8,
+                  "costPerConversion": 1000
+                }
+              },
+              {
+                "campaign": {
+                  "id": "2222",
+                  "name": "2026_Summer_Sale"
+                },
+                "adGroup": {
+                  "id": "3333",
+                  "name": "競品關鍵字組"
+                },
+                "adGroupCriterion": {
+                  "criterionId": "103",
+                  "keyword": {
+                    "text": "夏季 特賣 限定",
+                    "matchType": "EXACT"
+                  }
+                },
+                "metrics": {
+                  "costMicros": "3200000000",
+                  "conversions": 0,
+                  "costPerConversion": 0
+                }
+              },
+              {
+                "campaign": {
+                  "id": "2222",
+                  "name": "2026_Summer_Sale"
+                },
+                "adGroup": {
+                  "id": "4444",
+                  "name": "品牌關鍵字組"
+                },
+                "adGroupCriterion": {
+                  "criterionId": "201",
+                  "keyword": {
+                    "text": "品牌A 官網",
+                    "matchType": "EXACT"
+                  }
+                },
+                "metrics": {
+                  "costMicros": "5000000000",
+                  "conversions": 12,
+                  "costPerConversion": 416.67
+                }
+              },
+              {
+                "campaign": {
+                  "id": "2222",
+                  "name": "2026_Summer_Sale"
+                },
+                "adGroup": {
+                  "id": "4444",
+                  "name": "品牌關鍵字組"
+                },
+                "adGroupCriterion": {
+                  "criterionId": "202",
+                  "keyword": {
+                    "text": "品牌A 購買",
+                    "matchType": "PHRASE"
+                  }
+                },
+                "metrics": {
+                  "costMicros": "6500000000",
+                  "conversions": 18,
+                  "costPerConversion": 361.11
+                }
+              }
+            ]
+          },
+          "runAfter": {
+            "條件_2": [
+              "Succeeded"
+            ]
+          }
+        },
+        "篩選陣列": {
+          "type": "Query",
+          "inputs": {
+            "from": "@outputs('COST_ZERO_MockData')?['results']",
+            "where": "@equals(item()?['metrics']?['costMicros'],0)"
+          },
+          "runAfter": {
+            "COST_ZERO_MockData": [
+              "SUCCEEDED"
+            ]
+          }
+        },
+        "篩選陣列_1": {
+          "type": "Query",
+          "inputs": {
+            "from": "@body('篩選陣列')\r\n",
+            "where": "@less(item()?['campaign']?['startDate'],addDays(utcNow(), -2, 'yyyy-MM-dd'))"
+          },
+          "runAfter": {
+            "篩選陣列": [
+              "SUCCEEDED"
+            ]
+          }
+        },
+        "條件": {
+          "type": "If",
+          "expression": {
+            "and": [
+              {
+                "greater": [
+                  "@length(body('篩選陣列_1'))",
+                  0
+                ]
+              }
+            ]
+          },
+          "actions": {
+            "遞增變數": {
+              "type": "IncrementVariable",
+              "inputs": {
+                "name": "anomalyCount",
+                "value": 1
+              }
+            },
+            "附加至字串變數": {
+              "type": "AppendToStringVariable",
+              "inputs": {
+                "name": "alertContent",
+                "value": "<tr><td>花費異常 COST ZERO</td><td>近48小時上線活動有Cost為零</td><td>異常</td><td>花費 = 0</td></tr>\n"
+              },
+              "runAfter": {
+                "遞增變數": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "else": {
+            "actions": {}
+          },
+          "runAfter": {
+            "篩選陣列_1": [
+              "SUCCEEDED"
+            ]
+          }
+        },
+        "todayResults": {
+          "type": "Query",
+          "inputs": {
+            "from": "@outputs('CTR_FLUCTUATION_MockData')?['results']",
+            "where": "@equals(item()?['segments']?['date'],formatDateTime(utcNow(), 'yyyy-MM-dd'))"
+          },
+          "runAfter": {
+            "CTR_FLUCTUATION_MockData": [
+              "Succeeded"
+            ]
+          }
+        },
+        "yesterdayResults": {
+          "type": "Query",
+          "inputs": {
+            "from": "@outputs('CTR_FLUCTUATION_MockData')?['results']",
+            "where": "@equals(item()?['segments']?['date'],addDays(utcNow(), -1, 'yyyy-MM-dd'))"
+          },
+          "runAfter": {
+            "todayResults": [
+              "SUCCEEDED"
+            ]
+          }
+        },
+        "dayBeforeResults": {
+          "type": "Query",
+          "inputs": {
+            "from": "@outputs('CTR_FLUCTUATION_MockData')?['results']",
+            "where": "@equals(item()?['segments']?['date'],addDays(utcNow(), -2, 'yyyy-MM-dd'))"
+          },
+          "runAfter": {
+            "yesterdayResults": [
+              "SUCCEEDED"
+            ]
+          }
+        },
+        "highCPAKeywords": {
+          "type": "Query",
+          "inputs": {
+            "from": "@outputs('SEM_HIGH_CPA_MockData')?['results']",
+            "where": "@or(greater(item()?['metrics']?['costPerConversion'], mul(outputs('targetCPA'), 1.2)), and(less(item()?['metrics']?['conversions'], 1), greater(float(item()?['metrics']?['costMicros']), 0)))"
+          },
+          "runAfter": {
+            "targetCPA": [
+              "Succeeded"
+            ]
+          }
+        },
+        "關閉明細表": {
+          "type": "AppendToStringVariable",
+          "inputs": {
+            "name": "alertContent",
+            "value": "</table>"
+          },
+          "runAfter": {
+            "條件_3": [
+              "SUCCEEDED"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

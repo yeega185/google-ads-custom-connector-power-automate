@@ -1,0 +1,190 @@
+{
+  "_meta": {
+    "description": "模擬 GetKeywordCPAReport 查詢近 14 天（2026-05-18 ～ 2026-06-01）Keyword 加總成效資料",
+    "usage": "對應 SEM_HIGH_CPA 條件的 API 呼叫，此回傳為 14 天加總（無 segments.date）",
+    "target_cpa_from_rule": 500,
+    "anomaly_threshold": "TargetCPA × 1.2 = 600",
+    "scenarios": {
+      "keyword_brand_competitor": {
+        "text": "品牌A 競品",
+        "cost_NT": 14400,
+        "conversions": 20,
+        "actualCPA": 720,
+        "CPADiffPct": "+44%",
+        "anomaly": true,
+        "reason": "720 > 600，觸發 SEM_HIGH_CPA"
+      },
+      "keyword_discount": {
+        "text": "優惠 折扣",
+        "cost_NT": 8000,
+        "conversions": 8,
+        "actualCPA": 1000,
+        "CPADiffPct": "+100%",
+        "anomaly": true,
+        "reason": "1000 > 600，觸發 SEM_HIGH_CPA"
+      },
+      "keyword_zero_conversion": {
+        "text": "夏季 特賣 限定",
+        "cost_NT": 3200,
+        "conversions": 0,
+        "actualCPA": "∞",
+        "anomaly": true,
+        "reason": "cost > 0 且 conversions = 0，視為 CPA = ∞，觸發 SEM_HIGH_CPA"
+      },
+      "keyword_official": {
+        "text": "品牌A 官網",
+        "cost_NT": 5000,
+        "conversions": 12,
+        "actualCPA": 417,
+        "CPADiffPct": "-17%",
+        "anomaly": false,
+        "reason": "417 < 600，不觸發"
+      }
+    },
+    "note": "costMicros 為 14 天加總值，Flow 計算 CPA = div(costMicros, 1000000) / conversions"
+  },
+  "results": [
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale"
+      },
+      "adGroup": {
+        "resourceName": "customers/1234567890/adGroups/3333",
+        "id": "3333",
+        "name": "競品關鍵字組"
+      },
+      "adGroupCriterion": {
+        "resourceName": "customers/1234567890/adGroups/3333/adGroupCriteria/101",
+        "criterionId": "101",
+        "keyword": {
+          "text": "品牌A 競品",
+          "matchType": "BROAD"
+        }
+      },
+      "metrics": {
+        "costMicros": "14400000000",
+        "impressions": "8500",
+        "clicks": "288",
+        "ctr": 0.0339,
+        "conversions": 20.0,
+        "costPerConversion": 720.0
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale"
+      },
+      "adGroup": {
+        "resourceName": "customers/1234567890/adGroups/3333",
+        "id": "3333",
+        "name": "競品關鍵字組"
+      },
+      "adGroupCriterion": {
+        "resourceName": "customers/1234567890/adGroups/3333/adGroupCriteria/102",
+        "criterionId": "102",
+        "keyword": {
+          "text": "優惠 折扣",
+          "matchType": "PHRASE"
+        }
+      },
+      "metrics": {
+        "costMicros": "8000000000",
+        "impressions": "5200",
+        "clicks": "160",
+        "ctr": 0.0308,
+        "conversions": 8.0,
+        "costPerConversion": 1000.0
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale"
+      },
+      "adGroup": {
+        "resourceName": "customers/1234567890/adGroups/3333",
+        "id": "3333",
+        "name": "競品關鍵字組"
+      },
+      "adGroupCriterion": {
+        "resourceName": "customers/1234567890/adGroups/3333/adGroupCriteria/103",
+        "criterionId": "103",
+        "keyword": {
+          "text": "夏季 特賣 限定",
+          "matchType": "EXACT"
+        }
+      },
+      "metrics": {
+        "costMicros": "3200000000",
+        "impressions": "2100",
+        "clicks": "64",
+        "ctr": 0.0305,
+        "conversions": 0.0,
+        "costPerConversion": 0.0
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale"
+      },
+      "adGroup": {
+        "resourceName": "customers/1234567890/adGroups/4444",
+        "id": "4444",
+        "name": "品牌關鍵字組"
+      },
+      "adGroupCriterion": {
+        "resourceName": "customers/1234567890/adGroups/4444/adGroupCriteria/201",
+        "criterionId": "201",
+        "keyword": {
+          "text": "品牌A 官網",
+          "matchType": "EXACT"
+        }
+      },
+      "metrics": {
+        "costMicros": "5000000000",
+        "impressions": "18000",
+        "clicks": "900",
+        "ctr": 0.05,
+        "conversions": 12.0,
+        "costPerConversion": 416.67
+      }
+    },
+    {
+      "campaign": {
+        "resourceName": "customers/1234567890/campaigns/2222",
+        "id": "2222",
+        "name": "2026_Summer_Sale"
+      },
+      "adGroup": {
+        "resourceName": "customers/1234567890/adGroups/4444",
+        "id": "4444",
+        "name": "品牌關鍵字組"
+      },
+      "adGroupCriterion": {
+        "resourceName": "customers/1234567890/adGroups/4444/adGroupCriteria/202",
+        "criterionId": "202",
+        "keyword": {
+          "text": "品牌A 購買",
+          "matchType": "PHRASE"
+        }
+      },
+      "metrics": {
+        "costMicros": "6500000000",
+        "impressions": "14000",
+        "clicks": "700",
+        "ctr": 0.05,
+        "conversions": 18.0,
+        "costPerConversion": 361.11
+      }
+    }
+  ],
+  "fieldMask": "campaign.id,campaign.name,ad_group.id,ad_group.name,ad_group_criterion.criterion_id,ad_group_criterion.keyword.text,ad_group_criterion.keyword.match_type,metrics.cost_micros,metrics.impressions,metrics.clicks,metrics.ctr,metrics.conversions,metrics.cost_per_conversion",
+  "requestId": "mock-keyword-cpa-14days-20260601"
+}
