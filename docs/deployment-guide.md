@@ -20,29 +20,31 @@ This guide covers the full deployment of the **Google Ads Anomaly Monitoring Aut
 
 ---
 
-## 為什麼使用 MockData？/ Why MockData?
+## 為什麼上傳的 Flow 使用 MockData？/ Why does the uploaded Flow use MockData?
 
-### Google Ads API 沒有測試 Token 或沙箱環境
+### Custom Connector 已完成連線 / Connector is Live
 
-在開發初期，原計畫以 Custom Connector 直接呼叫 Google Ads API，並以 Developer Token 進行測試。實際嘗試後，發現以下限制：
+本專案的 Custom Connector 已完成 OAuth 2.0 授權，並以正式核准的 Developer Token 成功連線至 Google Ads API。開發初期遭遇的 Test Token 限制如下，供參考：
 
-**Google Ads API does not provide test tokens or a sandbox environment.**
+The Custom Connector has been fully authorized via OAuth 2.0 with an approved production Developer Token. The early-stage Test Token limitation is documented below for reference:
 
-| 限制 | 說明 |
-|-----|------|
-| Developer Token 審核制 | 新申請的 Token 在通過 Google 人工審核前，僅允許存取 **Test Account**（測試帳戶），無法查詢真實帳戶資料 |
-| Test Account 資料不足 | Test Account 內無真實廣告活動資料，無法產生「花費超標」「CTR 劇烈波動」「CPA 異常」等需要驗證的異常情境 |
-| 申請流程耗時 | Developer Token 升級為正式授權需提交使用說明並等待 Google 審核，無法在開發期間完成 |
+| 限制（開發初期） | 說明 |
+|--------------|------|
+| Test Developer Token | 在通過 Google 人工審核前，僅允許存取 **Test Account**，對真實帳戶查詢回傳 404 |
+| Test Account 資料不足 | 無真實廣告活動資料，無法模擬「花費超標」「CTR 波動」「CPA 異常」等情境 |
 
-### 解決方案：Compose Action 內嵌 MockData
+### 上傳 MockData 版的原因：安全性 / Reason for MockData version: Security
 
-為了在不使用真實 API 的情況下完整驗證 Flow 的所有監控邏輯，本專案採用以下方式：
+> **本 Repo 為公開 Repository，不包含任何真實憑證。**
+> Developer Token、OAuth Client Secret、Customer ID、Refresh Token 等敏感資訊不得上傳至公開 Repository。
 
-1. 在 Flow 中，以 **Compose Action**（撰寫）取代 Custom Connector 呼叫
-2. 每個 Compose Action 內嵌一份符合 Google Ads API 實際回傳格式的 JSON 資料
-3. 後續的所有邏輯（Filter Array、條件判斷、Email 組裝、CSV 產生）均接在 Compose 之後，行為與串接真實 API 完全一致
+因此，`flow/` 目錄提供的 Flow 定義採用 **MockData 版本**：
 
-這樣的設計讓整個 Flow 邏輯可以被完整執行與驗證，而不受 API 憑證限制影響。
+1. 以 **Compose Action**（撰寫）取代 Custom Connector 呼叫
+2. 每個 Compose Action 內嵌符合 Google Ads API 實際回傳格式的 JSON 資料
+3. 後續所有邏輯（Filter Array、條件判斷、Email 組裝、CSV 產生）行為與串接真實 API 完全一致
+
+MockData 版可直接匯入並執行，無需任何 API 憑證即可驗證完整流程。
 
 **Flow 中的 MockData 步驟對應：**
 

@@ -20,7 +20,8 @@
 4. 初次申請會取得「測試帳號 Token」，僅能存取 Test Account（測試帳戶），無需審核
 5. 正式申請需提交使用說明，約 5-10 個工作天審核
 
-> **⚠️ Test Developer Token 只能存取 Test Account，對真實 Customer ID 查詢時 Google Ads API 會回傳 404。若需驗證完整監控邏輯，請使用本 Repo 的 MockData 版 Flow。**
+> **⚠️ Test Developer Token 只能存取 Test Account，對真實 Customer ID 查詢時 Google Ads API 會回傳 404。**
+> 本專案已取得正式核准的 Developer Token，Custom Connector 可正常查詢真實帳戶。若尚未取得正式 Token，請使用本 Repo 的 MockData 版 Flow 驗證監控邏輯。
 
 ---
 

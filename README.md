@@ -96,24 +96,30 @@ Store all credentials in **Azure Key Vault** or **Power Automate Environment Var
 
 ## 關於 Mock 資料設計 / About the Mock Data Design
 
-### 為什麼使用自建 JSON 而非直接呼叫 API？/ Why self-built JSON instead of live API calls?
+### Custom Connector 連線狀態 / Connector Status
 
-> **Google Ads API 不提供測試用 Token 或沙箱環境。**
-> 即使申請到 Developer Token，在通過 Google 審核前僅能存取測試帳戶（Test Account），且測試帳戶的資料極為有限，無法模擬真實的 Campaign 成效狀態（如累積花費超標、CTR 劇烈波動、關鍵字 CPA 異常等）。
+本專案的 Custom Connector（`GoogleAdsSearch`）已完成 OAuth 2.0 授權並成功連線至 Google Ads API。開發初期遭遇的 Test Developer Token 限制（對真實帳戶回傳 404）已透過取得正式核准的 Developer Token 解決。
+
+The Custom Connector (`GoogleAdsSearch`) has been fully authorized via OAuth 2.0 and successfully connected to the Google Ads API. The Test Developer Token limitation encountered during early development (returning 404 on real accounts) was resolved by obtaining an approved production Developer Token.
+
+### 為什麼上傳的 Flow 使用 MockData？/ Why does the uploaded Flow use MockData?
+
+> **安全性考量：本 Repo 不包含任何真實憑證。**
+> Developer Token、OAuth Client Secret、Customer ID、Refresh Token 等敏感資訊不得上傳至公開 Repository。
 >
-> **Google Ads API does not provide test tokens or a sandbox environment.**
-> Developer Tokens are restricted to Test Accounts before passing Google's review process. Test Account data is too limited to simulate realistic anomaly scenarios (e.g., budget overspend, CTR fluctuation, high-CPA keywords).
+> **Security: This repo contains no real credentials.**
+> Sensitive values such as Developer Token, OAuth Client Secret, Customer ID, and Refresh Token must not be committed to a public repository.
 
-因此，本 Flow 在測試階段以 **Compose Action** 內嵌符合 API 回傳格式的 JSON 資料（即 `*_MockData` 步驟），取代實際的 Custom Connector API 呼叫，完整驗證所有監控邏輯與 Email 通知格式。
+因此，`flow/` 目錄提供的 Flow 定義採用 **MockData 版本**——以 Compose Action 內嵌符合 API 回傳格式的 JSON，取代真實 Custom Connector 呼叫。所有監控邏輯、Email 格式、CSV 附件均與正式版完全一致，可直接匯入執行並驗證流程。
 
-The Flow therefore uses **Compose Actions with embedded JSON** (`*_MockData` steps) that match the exact API response schema, replacing live Custom Connector calls during testing. This allows complete validation of all monitoring logic and email notification formatting.
+The `flow/` directory contains the **MockData version** — Compose Actions with embedded JSON matching the exact API response schema replace live Connector calls. All monitoring logic, email formatting, and CSV output are identical to the production version and can be imported and run immediately without any credentials.
 
-`mock/` 目錄提供這些 MockData 的獨立 JSON 參考檔，用途為：
-The `mock/` directory provides standalone JSON reference files for these MockData values, used for:
+`mock/` 目錄提供 MockData 的獨立 JSON 參考檔，用途為：
+The `mock/` directory provides standalone JSON reference files for:
 
-- 開發階段的 Flow 邏輯驗證 / Flow logic validation during development
-- 新成員熟悉 Google Ads API 回傳格式 / Onboarding new team members to understand API response structure
-- 未來正式串接 API 時的 Schema 對照 / Schema reference when connecting to the live API
+- 快速匯入並執行 Flow 而不需要任何 API 憑證 / Running the Flow immediately without any API credentials
+- 新成員熟悉 Google Ads API 回傳格式 / Onboarding new team members to the API response structure
+- 正式串接時的 Schema 對照 / Schema reference when switching to live API calls
 
 所有範例資料已去識別化，不含任何真實客戶資訊。Customer ID 均使用虛構數值。
 All sample data is anonymized and contains no real client information. Customer IDs use fictional values.
@@ -124,6 +130,7 @@ All sample data is anonymized and contains no real client information. Customer 
 
 | 版本 / Version | 日期 / Date | 說明 / Description |
 |---|---|---|
+| v1.1.0 | 2026-06-11 | Custom Connector OAuth 授權完成，取得正式 Developer Token，更新 MockData 說明為安全性考量而非 Token 限制 / OAuth authorization completed, production Developer Token obtained, updated MockData rationale to security rather than Token limitation |
 | v1.0.0 | 2026-06-01 | 初版，單一端點 GoogleAdsSearch，支援 4 種監控條件，Google Ads API v18 / Initial release, single-endpoint GoogleAdsSearch, supporting 4 monitoring conditions, Google Ads API v18 |
 
 ---
