@@ -1,0 +1,69 @@
+<ImportExportXml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26053.140" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26053.00140">
+  <Entities></Entities>
+  <Roles></Roles>
+  <Workflows>
+    <Workflow WorkflowId="{196a8cb9-7664-f111-ab0c-6045bd56dfb8}" Name="GoogleAds_AbnormalMonitor_Daily-json">
+      <JsonFileName>/Workflows/GoogleAds_AbnormalMonitor_Daily-json-196A8CB9-7664-F111-AB0C-6045BD56DFB8.json</JsonFileName>
+      <Type>1</Type>
+      <Subprocess>0</Subprocess>
+      <Category>5</Category>
+      <Mode>0</Mode>
+      <Scope>4</Scope>
+      <OnDemand>0</OnDemand>
+      <TriggerOnCreate>0</TriggerOnCreate>
+      <TriggerOnDelete>0</TriggerOnDelete>
+      <AsyncAutodelete>0</AsyncAutodelete>
+      <SyncWorkflowLogOnFailure>0</SyncWorkflowLogOnFailure>
+      <StateCode>1</StateCode>
+      <StatusCode>2</StatusCode>
+      <RunAs>1</RunAs>
+      <IsTransacted>1</IsTransacted>
+      <IntroducedVersion>1.0</IntroducedVersion>
+      <IsCustomizable>1</IsCustomizable>
+      <RendererObjectTypeCode>0</RendererObjectTypeCode>
+      <BusinessProcessType>0</BusinessProcessType>
+      <IsCustomProcessingStepAllowedForOtherPublishers>1</IsCustomProcessingStepAllowedForOtherPublishers>
+      <ModernFlowType>0</ModernFlowType>
+      <PrimaryEntity>none</PrimaryEntity>
+      <LocalizedNames>
+        <LocalizedName languagecode="1033" description="GoogleAds_AbnormalMonitor_Daily-json" />
+      </LocalizedNames>
+    </Workflow>
+  </Workflows>
+  <FieldSecurityProfiles></FieldSecurityProfiles>
+  <Templates />
+  <EntityMaps />
+  <EntityRelationships />
+  <OrganizationSettings />
+  <optionsets />
+  <CustomControls />
+  <EntityDataProviders />
+  <Connectors>
+    <Connector>
+      <connectorid>8e300fb4-d363-f111-ab0c-6045bd56dfb8</connectorid>
+      <description>Power Automate Custom Connector for Google Ads API. Executes GAQL (Google Ads Query Language) queries against a single search endpoint. Monitoring logic (COST_ZERO, BUDGET_OVERSPEND, CTR_FLUCTUATION, SEM_HIGH_CPA) is handled by the Power Automate Flow.</description>
+      <displayname>Google Ads Custom Connector</displayname>
+      <iconbrandcolor>#4285F4</iconbrandcolor>
+      <name>new_google-20ads-20custom-20connector</name>
+      <connectortype>1</connectortype>
+      <openapidefinition>/Connector/new_google-20ads-20custom-20connector_openapidefinition.json</openapidefinition>
+      <connectionparameters>/Connector/new_google-20ads-20custom-20connector_connectionparameters.json</connectionparameters>
+      <policytemplateinstances>/Connector/new_google-20ads-20custom-20connector_policytemplateinstances.json</policytemplateinstances>
+      <iconblob>/Connector/new_google-20ads-20custom-20connector_iconblob.Png</iconblob>
+    </Connector>
+  </Connectors>
+  <connectionreferences>
+    <connectionreference connectionreferencelogicalname="new_sharedoffice365_e1f29">
+      <connectionreferencedisplayname>Office 365 Outlook</connectionreferencedisplayname>
+      <connectorid>/providers/Microsoft.PowerApps/apis/shared_office365</connectorid>
+      <iscustomizable>1</iscustomizable>
+      <promptingbehavior>0</promptingbehavior>
+      <statecode>0</statecode>
+      <statuscode>1</statuscode>
+    </connectionreference>
+  </connectionreferences>
+  <Languages>
+    <Language>1033</Language>
+    <Language>1028</Language>
+  </Languages>
+</ImportExportXml>
