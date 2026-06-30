@@ -38,7 +38,7 @@ This connector uses a **single-endpoint design** — the GAQL query string deter
 
 | Operation ID | 端點 / Endpoint | 說明 / Description |
 |---|---|---|
-| `GoogleAdsSearch` | `POST /v18/customers/{customerId}/googleAds:search` | 執行 GAQL 查詢，依查詢內容回傳 Campaign / AdGroup / Keyword 成效資料 / Execute GAQL query; returns Campaign, AdGroup, or Keyword metrics depending on the query |
+| `GoogleAdsSearch` | `POST /v23/customers/{customerId}/googleAds:search` | 執行 GAQL 查詢，依查詢內容回傳 Campaign / AdGroup / Keyword 成效資料 / Execute GAQL query; returns Campaign, AdGroup, or Keyword metrics depending on the query |
 
 **對應監控條件與 GAQL 範例 / Monitoring Conditions and GAQL Examples:**
 
@@ -98,9 +98,9 @@ Store all credentials in **Azure Key Vault** or **Power Automate Environment Var
 
 ### Custom Connector 連線狀態 / Connector Status
 
-本專案的 Custom Connector（`GoogleAdsSearch`）已完成 OAuth 2.0 授權並成功連線至 Google Ads API。開發初期遭遇的 Test Developer Token 限制（對真實帳戶回傳 404）已透過取得正式核准的 Developer Token 解決。
+本專案的 Custom Connector（`GoogleAdsSearch`）已完成 OAuth 2.0 授權，並使用 Google Ads **測試帳號（Test Account）** 進行開發與連線驗證，確認 Connector 串接、查詢語法、回傳格式皆正常運作。Test Developer Token 對真實 Customer ID 查詢時，Google Ads API 會回傳 401 認證錯誤（`DEVELOPER_TOKEN_INVALID`）。
 
-The Custom Connector (`GoogleAdsSearch`) has been fully authorized via OAuth 2.0 and successfully connected to the Google Ads API. The Test Developer Token limitation encountered during early development (returning 404 on real accounts) was resolved by obtaining an approved production Developer Token.
+The Custom Connector (`GoogleAdsSearch`) has been fully authorized via OAuth 2.0 and verified against a Google Ads **Test Account** during development, confirming the connector wiring, query syntax, and response format all work as expected. Querying a real Customer ID with a Test Developer Token returns a 401 authentication error (`DEVELOPER_TOKEN_INVALID`).
 
 ### 為什麼上傳的 Flow 使用 MockData？/ Why does the uploaded Flow use MockData?
 
@@ -124,13 +124,20 @@ The `mock/` directory provides standalone JSON reference files for:
 所有範例資料已去識別化，不含任何真實客戶資訊。Customer ID 均使用虛構數值。
 All sample data is anonymized and contains no real client information. Customer IDs use fictional values.
 
+### AI 摘要功能 / AI Summary Feature
+
+Flow 中另外串接 **Foundry GPT API Custom Connector**（model: `gpt-5`），在彙整完所有異常後產生一段繁體中文 AI 摘要文字，整合進監控 Email 內文。此 Connector 採用 **API Key** 驗證，與 Google Ads Connector 完全獨立。詳細設計請見 [01_系統規劃文件](docs/01_系統規劃文件_GoogleAds異常監控自動化.md) 第 7A 節，部署步驟請見 [deployment-guide.md](docs/deployment-guide.md)。
+
+The Flow also calls a separate **Foundry GPT API Custom Connector** (model: `gpt-5`) to generate a short Traditional Chinese AI summary after all anomalies are aggregated, which is embedded into the monitoring email. This connector uses **API Key** authentication and is fully independent from the Google Ads connector. See [01_系統規劃文件](docs/01_系統規劃文件_GoogleAds異常監控自動化.md) Section 7A for design details, and [deployment-guide.md](docs/deployment-guide.md) for setup steps.
+
 ---
 
 ## 版本紀錄 / Changelog
 
 | 版本 / Version | 日期 / Date | 說明 / Description |
 |---|---|---|
-| v1.1.0 | 2026-06-11 | Custom Connector OAuth 授權完成，取得正式 Developer Token，更新 MockData 說明為安全性考量而非 Token 限制 / OAuth authorization completed, production Developer Token obtained, updated MockData rationale to security rather than Token limitation |
+| v1.2.0 | 2026-06-30 | 新增 Foundry GPT API Custom Connector（AI 摘要功能），Google Ads API 升級至 v23 / Added Foundry GPT API Custom Connector (AI summary feature), upgraded Google Ads API to v23 |
+| v1.1.0 | 2026-06-11 | Custom Connector OAuth 授權完成，以測試帳號（Test Account）驗證連線，更新 MockData 說明為安全性考量而非 Token 限制 / OAuth authorization completed, connection verified against a Test Account, updated MockData rationale to security rather than Token limitation |
 | v1.0.0 | 2026-06-01 | 初版，單一端點 GoogleAdsSearch，支援 4 種監控條件，Google Ads API v18 / Initial release, single-endpoint GoogleAdsSearch, supporting 4 monitoring conditions, Google Ads API v18 |
 
 ---
@@ -139,4 +146,6 @@ All sample data is anonymized and contains no real client information. Customer 
 
 - [01_系統規劃文件](docs/01_系統規劃文件_GoogleAds異常監控自動化.md)
 - [02_流程規劃文件](docs/02_流程規劃文件_GoogleAds異常監控自動化.md)
+- [oauth-setup.md](docs/oauth-setup.md)
+- [deployment-guide.md](docs/deployment-guide.md)
 - [Google Ads API 官方文件 / Official Docs](https://developers.google.com/google-ads/api/docs/start)

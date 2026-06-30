@@ -1,9 +1,9 @@
-<ImportExportXml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26053.140" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26053.00140">
+<ImportExportXml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26062.150" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26062.00150">
   <Entities></Entities>
   <Roles></Roles>
   <Workflows>
-    <Workflow WorkflowId="{196a8cb9-7664-f111-ab0c-6045bd56dfb8}" Name="GoogleAds_AbnormalMonitor_Daily-json">
-      <JsonFileName>/Workflows/GoogleAds_AbnormalMonitor_Daily-json-196A8CB9-7664-F111-AB0C-6045BD56DFB8.json</JsonFileName>
+    <Workflow WorkflowId="{a2958ca2-6174-f111-ab0f-002248ed884c}" Name="GoogleAds_AbnormalMonitor_Daily">
+      <JsonFileName>/Workflows/GoogleAds_AbnormalMonitor_Daily-A2958CA2-6174-F111-AB0F-002248ED884C.json</JsonFileName>
       <Type>1</Type>
       <Subprocess>0</Subprocess>
       <Category>5</Category>
@@ -20,13 +20,12 @@
       <IsTransacted>1</IsTransacted>
       <IntroducedVersion>1.0</IntroducedVersion>
       <IsCustomizable>1</IsCustomizable>
-      <RendererObjectTypeCode>0</RendererObjectTypeCode>
       <BusinessProcessType>0</BusinessProcessType>
       <IsCustomProcessingStepAllowedForOtherPublishers>1</IsCustomProcessingStepAllowedForOtherPublishers>
       <ModernFlowType>0</ModernFlowType>
       <PrimaryEntity>none</PrimaryEntity>
       <LocalizedNames>
-        <LocalizedName languagecode="1033" description="GoogleAds_AbnormalMonitor_Daily-json" />
+        <LocalizedName languagecode="1033" description="GoogleAds_AbnormalMonitor_Daily" />
       </LocalizedNames>
     </Workflow>
   </Workflows>
@@ -39,6 +38,18 @@
   <CustomControls />
   <EntityDataProviders />
   <Connectors>
+    <Connector>
+      <connectorid>bdfed773-7add-4417-adcc-09a058cf0d22</connectorid>
+      <description></description>
+      <displayname>Foundry GPT API</displayname>
+      <iconbrandcolor>#007ee5</iconbrandcolor>
+      <name>new_foundry-20gpt-20api</name>
+      <connectortype>1</connectortype>
+      <openapidefinition>/Connector/new_foundry-20gpt-20api_openapidefinition.json</openapidefinition>
+      <connectionparameters>/Connector/new_foundry-20gpt-20api_connectionparameters.json</connectionparameters>
+      <policytemplateinstances>/Connector/new_foundry-20gpt-20api_policytemplateinstances.json</policytemplateinstances>
+      <iconblob>/Connector/new_foundry-20gpt-20api_iconblob.Png</iconblob>
+    </Connector>
     <Connector>
       <connectorid>8e300fb4-d363-f111-ab0c-6045bd56dfb8</connectorid>
       <description>Power Automate Custom Connector for Google Ads API. Executes GAQL (Google Ads Query Language) queries against a single search endpoint. Monitoring logic (COST_ZERO, BUDGET_OVERSPEND, CTR_FLUCTUATION, SEM_HIGH_CPA) is handled by the Power Automate Flow.</description>
@@ -53,6 +64,28 @@
     </Connector>
   </Connectors>
   <connectionreferences>
+    <connectionreference connectionreferencelogicalname="new_sharedfoundry20gpt20api5f1534847223faf6ac5fa79b8a9c21bf5fc1_d3f3c">
+      <connectionreferencedisplayname>Foundry GPT API</connectionreferencedisplayname>
+      <connectorid>/providers/Microsoft.PowerApps/apis/shared_foundry-20gpt-20api-5f1534847223faf6ac-5fa79b8a9c21bf5fc1</connectorid>
+      <customconnectorid>
+        <connectorid>bdfed773-7add-4417-adcc-09a058cf0d22</connectorid>
+      </customconnectorid>
+      <iscustomizable>1</iscustomizable>
+      <promptingbehavior>0</promptingbehavior>
+      <statecode>0</statecode>
+      <statuscode>1</statuscode>
+    </connectionreference>
+    <connectionreference connectionreferencelogicalname="new_sharednew5fgoogle20ads20custom20connector5f1534847223faf6ac_b0d09">
+      <connectionreferencedisplayname>Google Ads Custom Connector</connectionreferencedisplayname>
+      <connectorid>/providers/Microsoft.PowerApps/apis/shared_new-5fgoogle-20ads-20custom-20connector-5f1534847223faf6ac</connectorid>
+      <customconnectorid>
+        <connectorid>8e300fb4-d363-f111-ab0c-6045bd56dfb8</connectorid>
+      </customconnectorid>
+      <iscustomizable>1</iscustomizable>
+      <promptingbehavior>0</promptingbehavior>
+      <statecode>0</statecode>
+      <statuscode>1</statuscode>
+    </connectionreference>
     <connectionreference connectionreferencelogicalname="new_sharedoffice365_e1f29">
       <connectionreferencedisplayname>Office 365 Outlook</connectionreferencedisplayname>
       <connectorid>/providers/Microsoft.PowerApps/apis/shared_office365</connectorid>

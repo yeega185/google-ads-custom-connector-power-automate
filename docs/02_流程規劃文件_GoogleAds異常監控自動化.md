@@ -6,7 +6,7 @@
 >
 > 本文件分為兩個部分：
 > - **第 1–11 節：系統設計規劃**——描述完整的目標架構，包含 SharePoint 規則管理、多客戶支援、AbnormalLogs 寫入等。Connector 操作採正確的單一端點設計（`GoogleAdsSearch`）。
-> - **第 12 節：實際交付版本（MockData 版）**——由於 Google Ads Developer Token 在審核前僅限存取 Test Account，對真實 Customer ID 呼叫回傳 404，無法以正式 API 進行測試。因此實際交付的 Flow 改以 Compose Action 內嵌 JSON MockData 取代 API 呼叫，完整驗證所有監控邏輯與 Email 格式。MockData 結構與真實 API 回傳格式完全一致，正式環境只需將 MockData 步驟替換為 `GoogleAdsSearch` Action 即可。
+> - **第 12 節：實際交付版本**——記錄開發過程與最終實際完成的 Flow 結構。本專案使用 **Google Ads 測試帳號（Test Account）** 進行開發與測試，Flow 開頭保留一段真實的 `Execute_Google_Ads_Query_(GAQL)` 連線呼叫，其餘監控邏輯則以 Compose Action 內嵌 JSON MockData 驅動，完整測試所有監控邏輯與 Email 格式。另外，彙整異常後會呼叫 **Foundry GPT API Custom Connector**（GPT-5）產生一段 AI 摘要文字，整合進 Email 內文。MockData 結構與真實 API 回傳格式完全一致，正式環境只需將連線目標換成正式客戶帳號、並將 MockData 步驟替換為 `GoogleAdsSearch` Action 即可，AI 摘要呼叫邏輯不需異動。
 
 ---
 
@@ -612,70 +612,92 @@ Flow: GoogleAds_AbnormalMonitor_Daily
 
 ---
 
-## 12. 實際交付版本（MockData 版）
+## 12. 實際交付版本
 
-### 12.1 背景：為何改為 MockData 實作
+### 12.1 背景：測試帳號與 MockData 的搭配方式
 
-Google Ads API 不提供測試 Token 或沙箱環境。Developer Token 在通過 Google 人工審核前，僅限存取 Test Account（測試帳戶）。實際測試時，對真實 Customer ID 發出 API 呼叫，Google Ads API 回傳 **404**（資源不存在），而非正常資料。
+Google Ads Developer Token 已申請並取得，可正常呼叫 `GoogleAdsSearch` Custom Connector。Flow 開頭保留一段真實的 `Execute_Google_Ads_Query_(GAQL)` 呼叫，連線至 **Google Ads 測試帳號（Test Account）**，用以驗證 Custom Connector 串接本身是否正常（OAuth、Header 參數、GAQL 查詢語法）。
 
-在等待 Developer Token 審核期間，為完整驗證所有監控邏輯與 Email 格式，採用以下替代方案：在 Flow 中以 **Compose Action 內嵌 JSON**（`*_MockData` 步驟）取代 Custom Connector 呼叫，所有後續的 Filter Array、條件判斷、Email 組裝、CSV 產生步驟均維持不變。
+主要的監控邏輯則以 **Compose Action 內嵌 JSON**（`*_MockData` 步驟）模擬四種異常情境的 API 回傳，所有後續的 Filter Array、條件判斷、Email 組裝、CSV 產生步驟均完整運作。
 
-MockData 的 JSON 結構與真實 Google Ads API 回傳格式完全一致，正式環境只需將各 `*_MockData` Compose 步驟替換為 `GoogleAdsSearch` Action 即可，無需修改任何下游邏輯。
+MockData 的 JSON 結構與真實 Google Ads API 回傳格式完全一致，正式上線時只需將 `Execute_Google_Ads_Query_(GAQL)` 的連線目標換成正式客戶帳號，並將各 `*_MockData` Compose 步驟替換為對應的 `GoogleAdsSearch` 查詢即可，無需修改任何下游邏輯（包含 AI 摘要的呼叫方式）。
 
 ---
 
 ### 12.2 實際交付 Flow 架構
 
 **Flow 名稱：** `GoogleAds_AbnormalMonitor_Daily`
-**檔案位置：** `flow/GoogleAds_AbnormalMonitor_Daily.json`
+**檔案位置：** `flow/Workflows/GoogleAds_AbnormalMonitor_Daily-*.json`
 
 ```
 [Trigger] Recurrence（每日 01:00 UTC = 09:00 UTC+8）
  │
+[OpenApiConnection] Execute_Google_Ads_Query_(GAQL)
+   ← 真實呼叫 Custom Connector（GoogleAdsSearch），連線至測試帳號（Test Account）
+     查詢 campaign 層級近 7 日成效，用以驗證連線本身是否正常
+ │
 [Initialize] alertContent（String，初始值為 HTML 表格標題列）
 [Initialize] anomalyCount（Integer，初始值 0）
+[Initialize] aiSummary（String，初始值「AI摘要產生中」）
  │
-[Compose] COST_ZERO_MockData       ← 模擬 COST_ZERO API 回傳
-[Filter Array] 篩選陣列             ← costMicros = 0
-[Filter Array] 篩選陣列_1           ← startDate 在 48 小時內
-[Condition] 條件                   ← length > 0 → 異常
-  └─ True: IncrementVariable anomalyCount
-           AppendToStringVariable alertContent（加入 COST_ZERO 異常列）
- │
-[Compose] BUDGET_OVERSPEND_MockData ← 模擬 BUDGET_OVERSPEND API 回傳
-[Apply to each] 套用至各項           ← 逐筆 Campaign 計算
-  ├─ [Compose] campaignDays / expectedDaily / actualCumCostNT / elapsedDays / expectedCumNT
-  └─ [Condition] 條件_1             ← actualCumCostNT > expectedCumNT × 1.1
-       └─ True: IncrementVariable / AppendToStringVariable（BUDGET_OVERSPEND 列）
- │
-[Compose] CTR_FLUCTUATION_MockData  ← 模擬 CTR_FLUCTUATION API 回傳（含今日/昨日/前日）
-[Filter Array] todayResults         ← segments.date = 今日
-[Filter Array] yesterdayResults     ← segments.date = 昨日
-[Filter Array] dayBeforeResults     ← segments.date = 前前日
-[Condition] 條件_2                  ← today_ctr > yesterday_ctr × 1.2
-                                       OR today_ctr < yesterday_ctr × 0.8
-  └─ True: IncrementVariable / AppendToStringVariable（CTR_FLUCTUATION 列，含百分比）
- │
-[Compose] SEM_HIGH_CPA_MockData     ← 模擬 SEM_HIGH_CPA API 回傳
-[Compose] targetCPA = 500
-[Filter Array] highCPAKeywords      ← costPerConversion > targetCPA × 1.2
-                                       OR (conversions < 1 AND costMicros > 0)
-[Condition] 條件_3                  ← length(highCPAKeywords) > 0
-  └─ True:
-       IncrementVariable / AppendToStringVariable（SEM 摘要列）
-       [Select] 選取                ← 整理關鍵字欄位
-       [Create CSV table] 建立_CSV_資料表
-       AppendToStringVariable 附加至字串變數_5
-         ← 關閉主表格，開啟 SEM 明細表格（含欄位標題）
-       [Apply to each] 套用至各項_1 ← 逐筆關鍵字加入明細表格列
- │
-AppendToStringVariable 關閉明細表   ← 關閉最後一個表格（</table>）
+[Condition] 條件_5  ← length(Execute_Google_Ads_Query_(GAQL) 回傳結果) > 0
+  ├─ True：（空白分支，保留供日後正式串接擴充）
+  └─ False（Else）：以下 MockData 驅動邏輯
+       │
+       [Compose] COST_ZERO_MockData       ← 模擬 COST_ZERO API 回傳
+       [Filter Array] 篩選陣列             ← costMicros = 0
+       [Filter Array] 篩選陣列_1           ← startDate 在 48 小時內
+       [Condition] 條件                   ← length > 0 → 異常
+         └─ True: IncrementVariable anomalyCount
+                  AppendToStringVariable alertContent（加入 COST_ZERO 異常列）
+       │
+       [Compose] BUDGET_OVERSPEND_MockData ← 模擬 BUDGET_OVERSPEND API 回傳
+       [Apply to each] 套用至各項           ← 逐筆 Campaign 計算
+         ├─ [Compose] campaignDays / expectedDaily / actualCumCostNT / elapsedDays / expectedCumNT
+         └─ [Condition] 條件_1             ← actualCumCostNT > expectedCumNT × 1.1
+              └─ True: IncrementVariable / AppendToStringVariable（BUDGET_OVERSPEND 列）
+       │
+       [Compose] CTR_FLUCTUATION_MockData  ← 模擬 CTR_FLUCTUATION API 回傳（含今日/昨日/前日）
+       [Filter Array] todayResults         ← segments.date = 今日
+       [Filter Array] yesterdayResults     ← segments.date = 昨日
+       [Filter Array] dayBeforeResults     ← segments.date = 前前日
+       [Condition] 條件_2                  ← today_ctr > yesterday_ctr × 1.2
+                                              OR today_ctr < yesterday_ctr × 0.8
+         └─ True: IncrementVariable / AppendToStringVariable（CTR_FLUCTUATION 列，含百分比）
+       │
+       [Compose] SEM_HIGH_CPA_MockData     ← 模擬 SEM_HIGH_CPA API 回傳
+       [Compose] targetCPA = 500
+       [Filter Array] highCPAKeywords      ← costPerConversion > targetCPA × 1.2
+                                              OR (conversions < 1 AND costMicros > 0)
+       [Condition] 條件_3                  ← length(highCPAKeywords) > 0
+         └─ True:
+              IncrementVariable / AppendToStringVariable（SEM 摘要列）
+              [Select] 選取                ← 整理關鍵字欄位
+              [Create CSV table] 建立_CSV_資料表
+              AppendToStringVariable 附加至字串變數_5
+                ← 關閉主表格，開啟 SEM 明細表格（含欄位標題）
+              [Apply to each] 套用至各項_1 ← 逐筆關鍵字加入明細表格列
+       │
+       AppendToStringVariable 關閉明細表   ← 關閉最後一個表格（</table>）
+       │
+       [Compose] 組合AI請求內容
+          ← 組成提示詞：「請用繁體中文，根據以下Google Ads廣告異常監控結果，
+             寫一段2到3句話的精簡摘要說明：今天監控時間為{yyyyMMdd}，
+             共發現{anomalyCount}組異常情況。請用專業但易懂的語氣描述監測狀況，
+             並建議後續應確認的方向。」
+       [OpenApiConnection] 傳送訊息
+          ← 呼叫 Foundry GPT API Custom Connector（SendMessage），model: gpt-5
+            body/input = 組合AI請求內容 的輸出
+       [Parse JSON] 剖析JSON
+          ← 依 Foundry 回傳 Schema（id/object/status/model/output/usage）剖析
+       [SetVariable] 設定變數
+          ← aiSummary = first(last(body('剖析JSON')?['output'])?['content'])?['text']
  │
 [Condition] 條件_4                  ← anomalyCount > 0
   └─ True: Send Email (V2)
            收件人：your-email@example.com
            主旨：[Google Ads 異常監控] yyyy/MM/dd 發現 N 組異常
-           內文：HTML 格式，含異常摘要表格與 SEM 明細表格
+           內文：HTML 格式，含 AI 摘要段落、異常摘要表格與 SEM 明細表格
            附件：SEM差勁關鍵字附件.csv（UTF-8 with BOM）
 ```
 
@@ -683,12 +705,13 @@ AppendToStringVariable 關閉明細表   ← 關閉最後一個表格（</table>
 
 ### 12.3 實際交付版與設計規劃版的對照
 
-| 項目 | 設計規劃版（第 1–11 節）| 實際交付版（MockData）|
+| 項目 | 設計規劃版（第 1–11 節）| 實際交付版 |
 |-----|----------------------|-------------------|
-| 資料來源 | Custom Connector `GoogleAdsSearch` | Compose MockData（相同 Schema）|
+| 資料來源 | Custom Connector `GoogleAdsSearch` | 開頭真實連線（測試帳號）＋ Compose MockData（相同 Schema）|
 | 規則管理 | SharePoint `MonitorRules` | Flow 內硬寫門檻值（targetCPA=500）|
-| 流程變數 | 9 個（含日期、清單、錯誤日誌） | 2 個（`alertContent`、`anomalyCount`）|
-| 主流程結構 | Apply to each MonitorRule → Switch | 依序 MockData → 條件判斷 |
+| 流程變數 | 9 個（含日期、清單、錯誤日誌） | 3 個（`alertContent`、`anomalyCount`、`aiSummary`）|
+| 主流程結構 | Apply to each MonitorRule → Switch | 條件_5（真實連線結果）→ MockData → 條件判斷 |
+| AI 摘要 | 無 | ✅ Foundry GPT API（GPT-5）產生摘要並寫入 Email |
 | 結果寫入 | AbnormalLogs SharePoint List | 無（只寄 Email）|
 | 錯誤處理 | varErrorLog + 管理者告警 | 無（MockData 不會失敗）|
 | Email 附件 | Base64 encode | UTF-8 BOM + Create CSV table |
@@ -696,7 +719,8 @@ AppendToStringVariable 關閉明細表   ← 關閉最後一個表格（</table>
 
 ---
 
-*文件版本：v1.1*
+*文件版本：v1.2*
 *建立日期：2026/06/01*
-*更新日期：2026/06/10（新增第 12 節實際交付版本說明，修正 Connector 操作設計）*
+*最後更新：2026/06/30（第 12 節新增測試帳號連線檢查、Foundry GPT API AI 摘要步驟，更新對照表）*
 *對應文件：01_系統規劃文件_GoogleAds異常監控自動化.md*
+*文件狀態：系統開發與功能測試皆已完成*

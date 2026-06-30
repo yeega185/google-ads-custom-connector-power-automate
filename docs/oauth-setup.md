@@ -2,6 +2,8 @@
 
 本文件說明如何取得 Google Ads API 所需的 OAuth 憑證，並設定至 Power Automate Custom Connector。
 
+> 本文件僅涵蓋 **Google Ads Custom Connector** 的 OAuth 2.0 設定。Flow 中另外使用的 **Foundry GPT API Custom Connector**（產生 AI 摘要）採用 **API Key** 驗證，不需要 OAuth，設定方式請見 [deployment-guide.md](deployment-guide.md) 的「部署步驟三：建立 Foundry GPT API Custom Connector」。
+
 ---
 
 ## 前置條件
@@ -20,8 +22,8 @@
 4. 初次申請會取得「測試帳號 Token」，僅能存取 Test Account（測試帳戶），無需審核
 5. 正式申請需提交使用說明，約 5-10 個工作天審核
 
-> **⚠️ Test Developer Token 只能存取 Test Account，對真實 Customer ID 查詢時 Google Ads API 會回傳 404。**
-> 本專案已取得正式核准的 Developer Token，Custom Connector 可正常查詢真實帳戶。若尚未取得正式 Token，請使用本 Repo 的 MockData 版 Flow 驗證監控邏輯。
+> **⚠️ Test Developer Token 對真實 Customer ID 查詢時，Google Ads API 會回傳 401 認證錯誤（`DEVELOPER_TOKEN_INVALID`）。**
+> 本專案開發與測試階段使用 Google Ads **測試帳號（Test Account）**，Custom Connector 已可正常查詢測試帳號資料。監控邏輯則以本 Repo 的 MockData 版 Flow 完整驗證。
 
 ---
 
@@ -104,7 +106,7 @@ curl -X POST https://oauth2.googleapis.com/token \
 
 # 2. 用 Access Token 呼叫 Google Ads API
 curl -X POST \
-  https://googleads.googleapis.com/v18/customers/CUSTOMER_ID/googleAds:search \
+  https://googleads.googleapis.com/v23/customers/CUSTOMER_ID/googleAds:search \
   -H "Authorization: Bearer ACCESS_TOKEN" \
   -H "developer-token: YOUR_DEVELOPER_TOKEN" \
   -H "Content-Type: application/json" \
@@ -118,7 +120,7 @@ curl -X POST \
 | 錯誤訊息 | 原因 | 解決方式 |
 |--------|------|---------|
 | `DEVELOPER_TOKEN_NOT_APPROVED` | Developer Token 僅為測試版，無法存取正式帳戶 | 申請正式 Token，或改用 Test Account |
-| API 回傳 404 | Test Developer Token 無法查詢真實 Customer ID（資源不存在） | 使用 MockData 版 Flow 驗證邏輯，或等待 Token 正式審核通過 |
+| API 回傳 401 `DEVELOPER_TOKEN_INVALID` | Test Developer Token 查詢真實 Customer ID 時的認證錯誤 | 使用 MockData 版 Flow 驗證邏輯，或改用測試帳號的 Customer ID 查詢 |
 | `OAUTH_TOKEN_EXPIRED` | Access Token 已過期 | Refresh Token 重新取得（Custom Connector 自動處理） |
 | `CUSTOMER_NOT_FOUND` | Customer ID 錯誤 | 確認 Customer ID（去除 dash，純數字） |
 | `USER_PERMISSION_DENIED` | 授權帳號無此帳戶存取權 | 確認 Google Ads 帳戶已授權此 OAuth 帳號 |

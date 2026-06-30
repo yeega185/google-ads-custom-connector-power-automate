@@ -24,14 +24,14 @@ This guide covers the full deployment of the **Google Ads Anomaly Monitoring Aut
 
 ### Custom Connector 已完成連線 / Connector is Live
 
-本專案的 Custom Connector 已完成 OAuth 2.0 授權，並以正式核准的 Developer Token 成功連線至 Google Ads API。開發初期遭遇的 Test Token 限制如下，供參考：
+本專案的 Custom Connector 已完成 OAuth 2.0 授權，並使用 Google Ads **測試帳號（Test Account）** 進行開發與連線驗證，確認 Connector 串接、查詢語法、回傳格式皆正常運作。
 
-The Custom Connector has been fully authorized via OAuth 2.0 with an approved production Developer Token. The early-stage Test Token limitation is documented below for reference:
+The Custom Connector has been fully authorized via OAuth 2.0 and verified against a Google Ads **Test Account** during development, confirming the connector wiring, query syntax, and response format all work as expected.
 
-| 限制（開發初期） | 說明 |
+| 開發階段使用方式 | 說明 |
 |--------------|------|
-| Test Developer Token | 在通過 Google 人工審核前，僅允許存取 **Test Account**，對真實帳戶查詢回傳 404 |
-| Test Account 資料不足 | 無真實廣告活動資料，無法模擬「花費超標」「CTR 波動」「CPA 異常」等情境 |
+| Test Account 連線 | Flow 中保留一段真實的 `GoogleAdsSearch` 呼叫，連線至測試帳號，驗證 Connector 本身串接正常 |
+| Test Account 資料不足 | 測試帳號無真實廣告活動資料，無法模擬「花費超標」「CTR 波動」「CPA 異常」等情境，因此監控邏輯改以 MockData 驗證 |
 
 ### 上傳 MockData 版的原因：安全性 / Reason for MockData version: Security
 
@@ -129,7 +129,7 @@ Custom Connector 定義 Google Ads API 的呼叫介面，供未來替換 MockDat
 
 | Operation ID | 端點 |
 |-------------|-----|
-| `GoogleAdsSearch` | `POST /v18/customers/{customerId}/googleAds:search` |
+| `GoogleAdsSearch` | `POST /v23/customers/{customerId}/googleAds:search` |
 
 本 Connector 採**單一端點設計**，以 GAQL 查詢語法決定回傳資料，不需為每種監控條件設立獨立端點。
 
@@ -142,9 +142,115 @@ Custom Connector 定義 Google Ads API 的呼叫介面，供未來替換 MockDat
 
 ---
 
-## 部署步驟三：正式版替換（未來）/ Production Switch
+## 部署步驟三：建立 Foundry GPT API Custom Connector / Setup Foundry GPT API Connector
 
-當 Google Ads Developer Token 完成審核、可存取真實帳戶後，依以下方式將 MockData 替換為真實 API 呼叫：
+本專案另外使用一個獨立的 Custom Connector，呼叫 **Microsoft Foundry GPT API**（model: `gpt-5`），在每次監控完成後產生一段 AI 摘要文字，整合進 Email 內文。此 Connector 與 Google Ads Connector 完全獨立，採用 **API Key 驗證**（非 OAuth）。
+
+### 前置條件
+
+- 一個已部署 GPT-5 模型的 **Azure AI Foundry** 資源
+- 該資源的 Endpoint（例如 `https://<your-resource>.services.ai.azure.com`）與 API Key
+
+### 建立 Azure AI Foundry 資源與模型部署
+
+1. 登入 [Azure Portal](https://portal.azure.com)，建立或開啟一個 **Azure AI Foundry** 資源
+2. 進入該資源的「模型部署」，部署 `gpt-5` 模型
+3. 於資源的「金鑰與端點」頁面，記下：
+   - Endpoint（去除 `https://` 與結尾路徑後的主機名稱，例如 `your-resource.services.ai.azure.com`）
+   - API Key
+
+### 匯入 Custom Connector
+
+1. 登入 [Power Automate](https://make.powerautomate.com)
+2. 左側選單 → 「資料」→「自訂連接器」
+3. 右上角「新增自訂連接器」→「從空白建立」或「匯入 OpenAPI 檔案」
+4. 名稱：`Foundry GPT API`
+
+### 設定 General（一般）
+
+| 欄位 | 值 |
+|-----|---|
+| Connector name | `Foundry GPT API` |
+| Host | `<your-resource>.services.ai.azure.com`（建立連接時填入實際 Azure AI Foundry 資源主機名稱） |
+| Base URL | `/` |
+
+### 設定 Security（安全性）
+
+**Authentication type：API Key**
+
+| 欄位 | 值 |
+|-----|---|
+| Parameter label | `api-key` |
+| Parameter name | `api-key` |
+| Parameter location | Header |
+
+### 設定 Definition（動作定義）
+
+新增一個 Action：
+
+| 欄位 | 值 |
+|-----|---|
+| Summary | 傳送訊息 |
+| Operation ID | `SendMessage` |
+| 路徑 | `POST /openai/v1/responses` |
+
+**Request Body：**
+
+```json
+{
+  "model": "string",
+  "input": "string"
+}
+```
+
+**Response（預設回應 Schema）：**
+
+```json
+{
+  "id": "string",
+  "object": "string",
+  "status": "string",
+  "model": "string",
+  "output": [
+    {
+      "type": "string",
+      "role": "string",
+      "content": [
+        { "type": "string", "text": "string" }
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}
+```
+
+### 建立 Connection（API Key 授權）
+
+1. 左側選單 → 「資料」→「連接」→「新增連接」
+2. 搜尋 `Foundry GPT API`
+3. 貼上前置步驟取得的 API Key
+4. 授權完成
+
+### Flow 中的呼叫方式
+
+Flow 在彙整完所有異常後，依序執行：
+
+1. `組合AI請求內容`（Compose）—— 組成提示詞，內容包含監控日期與異常組數
+2. `傳送訊息`（呼叫 `Foundry GPT API` Connector 的 `SendMessage`，`body/model` 固定為 `gpt-5`，`body/input` 為提示詞文字）
+3. `剖析JSON`（Parse JSON，依上方 Response Schema 解析）
+4. `設定變數`（將 `first(last(body('剖析JSON')?['output'])?['content'])?['text']` 寫入 `aiSummary` 變數，供 Email 內文使用）
+
+若 Foundry API 呼叫失敗或逾時，`aiSummary` 變數會維持初始值「AI摘要產生中」，Email 仍會正常寄出，僅 AI 摘要段落顯示初始值，不影響其餘異常資訊的呈現。
+
+---
+
+## 部署步驟四：正式版替換（未來）/ Production Switch
+
+當有實際客戶帳號可串接後，依以下方式將 MockData 替換為真實 API 呼叫：
 
 | MockData Compose 步驟 | 替換為 | GAQL 查詢 |
 |----------------------|-------|---------|
@@ -243,5 +349,5 @@ https://global.consent.azure-apim.net/redirect/<connector-logical-name>
 | Email 沒有收到 | anomalyCount 為 0，條件_4 不觸發 | MockData 中所有條件均已設計為會觸發，確認 Flow 未被修改 |
 | Swagger 匯入失敗 | JSON 格式錯誤 | 使用 [Swagger Editor](https://editor.swagger.io) 驗證格式 |
 | OAuth 授權後出現 400 錯誤 | Redirect URI 不符 | 確認 GCP 的 Redirect URI 含 `global.consent.azure-apim.net/redirect` |
-| API 呼叫回傳 404 | Developer Token 仍為測試狀態，測試 Token 只能存取 Test Account，對真實 Customer ID 查詢時 Google Ads API 會回傳 404（資源不存在） | 確認 Token 已通過 Google 審核，或先使用 MockData 版 Flow 進行驗證 |
-| GAQL 語法錯誤回傳 400 | 欄位名稱或 FROM 資源不符 | 至 [Google Ads Query Builder](https://developers.google.com/google-ads/api/fields/v18/overview_query_builder) 驗證語法 |
+| API 呼叫回傳 401 `DEVELOPER_TOKEN_INVALID` | 測試帳號的 Developer Token 對真實 Customer ID 查詢時的認證錯誤 | 先使用 MockData 版 Flow 進行驗證，或改用測試帳號的 Customer ID 查詢 |
+| GAQL 語法錯誤回傳 400 | 欄位名稱或 FROM 資源不符 | 至 [Google Ads Query Builder](https://developers.google.com/google-ads/api/fields/v23/overview_query_builder) 驗證語法 |

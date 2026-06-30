@@ -1,11 +1,11 @@
-<ImportExportXml version="9.2.26053.140" SolutionPackageVersion="9.2" languagecode="1033" generatedBy="CrmLive" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26053.140" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26053.00140">
+<ImportExportXml version="9.2.26062.150" SolutionPackageVersion="9.2" languagecode="1033" generatedBy="CrmLive" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26062.150" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26062.00150">
   <SolutionManifest>
     <UniqueName>googleadscustomconnectorjson</UniqueName>
     <LocalizedNames>
       <LocalizedName description="google-ads-custom-connector-json" languagecode="1033" />
     </LocalizedNames>
     <Descriptions />
-    <Version>1.0.0.3</Version>
+    <Version>1.0.0.6</Version>
     <Managed>1</Managed>
     <Publisher>
       <UniqueName>DefaultPublisherorg88d2781a</UniqueName>
@@ -79,7 +79,8 @@
       </Addresses>
     </Publisher>
     <RootComponents>
-      <RootComponent type="29" id="{196a8cb9-7664-f111-ab0c-6045bd56dfb8}" behavior="0" />
+      <RootComponent type="29" id="{a2958ca2-6174-f111-ab0f-002248ed884c}" behavior="0" />
+      <RootComponent type="372" id="{bdfed773-7add-4417-adcc-09a058cf0d22}" schemaName="new_foundry-20gpt-20api" behavior="0" />
       <RootComponent type="372" id="{8e300fb4-d363-f111-ab0c-6045bd56dfb8}" schemaName="new_google-20ads-20custom-20connector" behavior="0" />
     </RootComponents>
     <MissingDependencies />

@@ -30,7 +30,7 @@
     }
   ],
   "paths": {
-    "/v18/customers/{customerId}/googleAds:search": {
+    "/v23/customers/{customerId}/googleAds:search": {
       "post": {
         "operationId": "GoogleAdsSearch",
         "summary": "Execute Google Ads Query (GAQL)",
@@ -92,13 +92,13 @@
             "description": "Invalid GAQL query syntax or unsupported fields"
           },
           "401": {
-            "description": "OAuth token invalid or expired"
+            "description": "OAuth token invalid or expired, or Developer Token invalid (DEVELOPER_TOKEN_INVALID) — e.g. when using a test Developer Token to query a real (non-test) account"
           },
           "403": {
             "description": "Insufficient permissions or invalid Developer Token"
           },
           "404": {
-            "description": "Customer ID not found — occurs when using a test Developer Token to query a real (non-test) account"
+            "description": "Customer ID not found"
           },
           "429": {
             "description": "API quota exceeded"
