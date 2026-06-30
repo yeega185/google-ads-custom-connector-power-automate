@@ -25,7 +25,15 @@ google-ads-custom-connector/
 │   ├── oauth-setup.md               # Google OAuth 2.0 憑證設定指南 / Google OAuth 2.0 setup guide
 │   └── deployment-guide.md          # 部署至 Power Automate 指南 / Power Automate deployment guide
 ├── flow/
-│   └── GoogleAds_AbnormalMonitor_Daily.json  # Power Automate Flow 定義（Mock 版）/ Flow definition (mock version)
+│   ├── GoogleAds_AbnormalMonitor_Daily.json  # Power Automate Flow 定義（MockData 版，扁平檔，可直接匯入）/ Flow definition (MockData version, flat file for direct import)
+│   ├── solution.xml                 # Power Automate Solution 匯出元資料 / Solution export metadata
+│   ├── customizations.xml           # Solution 元件清單（Workflow、Connector、Connection Reference）/ Solution component manifest
+│   ├── [Content_Types].xml          # Solution 封裝內容類型定義 / Solution package content types
+│   ├── Connector/                   # Custom Connector 定義（Google Ads + Foundry GPT API）/ Custom Connector definitions
+│   │   ├── new_google-20ads-20custom-20connector_*  # Google Ads Connector（definition、connection params、icon）
+│   │   └── new_foundry-20gpt-20api_*                # Foundry GPT API Connector（definition、connection params、icon）
+│   └── Workflows/
+│       └── GoogleAds_AbnormalMonitor_Daily-*.json    # Solution 封裝版 Flow 定義 / Solution-packaged Flow definition
 └── README.md
 ```
 
