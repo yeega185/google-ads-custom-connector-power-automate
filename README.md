@@ -89,7 +89,6 @@ This connector uses a **single-endpoint design** — the GAQL query string deter
 > ⚠️ **請勿將以下資訊提交至此 Repo / Never commit the following to this repo:**
 
 - `client_secret.json` / OAuth client secret file
-- Refresh Token
 - Google Ads Developer Token
 - Customer ID / Login Customer ID
 - 任何含真實客戶資料的設定檔 / Any configuration files containing real client data
