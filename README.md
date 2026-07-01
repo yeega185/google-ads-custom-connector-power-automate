@@ -143,6 +143,7 @@ The Flow also calls a separate **Foundry GPT API Custom Connector** (model: `gpt
 
 | 版本 / Version | 日期 / Date | 說明 / Description |
 |---|---|---|
+| v1.2.1 | 2026-07-01 | 文件修正：移除不適用的 Refresh Token 說明、更新部署限制為實際開發內容（Test Account 建立、Solution 匯出錯誤）/ Doc fixes: removed inapplicable Refresh Token instructions, updated dev limitations with actual issues encountered |
 | v1.2.0 | 2026-06-30 | 新增 Foundry GPT API Custom Connector（AI 摘要功能），Google Ads API 升級至 v23 / Added Foundry GPT API Custom Connector (AI summary feature), upgraded Google Ads API to v23 |
 | v1.1.0 | 2026-06-11 | Custom Connector OAuth 授權完成，以測試帳號（Test Account）驗證連線，更新 MockData 說明為安全性考量而非 Token 限制 / OAuth authorization completed, connection verified against a Test Account, updated MockData rationale to security rather than Token limitation |
 | v1.0.0 | 2026-06-01 | 初版，單一端點 GoogleAdsSearch，支援 4 種監控條件，Google Ads API v18 / Initial release, single-endpoint GoogleAdsSearch, supporting 4 monitoring conditions, Google Ads API v18 |
