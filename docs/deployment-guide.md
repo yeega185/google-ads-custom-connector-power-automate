@@ -36,7 +36,7 @@ The Custom Connector has been fully authorized via OAuth 2.0 and verified agains
 ### 上傳 MockData 版的原因：安全性 / Reason for MockData version: Security
 
 > **本 Repo 為公開 Repository，不包含任何真實憑證。**
-> Developer Token、OAuth Client Secret、Customer ID、Refresh Token 等敏感資訊不得上傳至公開 Repository。
+> Developer Token、OAuth Client Secret、Customer ID 等敏感資訊不得上傳至公開 Repository。
 
 因此，`flow/` 目錄提供的 Flow 定義採用 **MockData 版本**：
 
@@ -289,55 +289,48 @@ Power Automate 的 Expression 引擎雖然支援 `filter()` 語法，但在 `fil
 
 ---
 
-### 限制 2：Custom Connector UI 識別提供者下拉選單無法載入
+### 限制 2：Developer Token 層級限制與 Test Account 建立
 
-**問題：** 在 Power Automate 網頁介面建立 Custom Connector 時，「Security」頁籤的「Identity Provider」下拉選單永遠空白，無論使用 Edge、Chrome 或重新整理都無法載入。嘗試從空白建立或用 Swagger Editor 匯入均失敗。
+**問題：** 成功完成 OAuth 授權後，呼叫 Google Ads API 仍回傳錯誤：
 
-**根本原因：** Microsoft 識別提供者服務在此網路環境無回應，與操作方式無關。
-
-**解法：** 改用 **pac CLI**（Microsoft 官方 Power Platform 開發者工具），同時匯入 `apiDefinition.swagger.json` 和 `apiProperties.json`，繞過故障的 UI：
-
-```powershell
-$pac = "C:\Users\User\AppData\Local\Microsoft\PowerAppsCLI\Microsoft.PowerApps.CLI.2.8.1\tools\pac.exe"
-
-# 登入
-& $pac auth create --name MyOrg
-
-# 建立 Connector
-& $pac connector create `
-  --api-definition-file "connector/apiDefinition.swagger.json" `
-  --api-properties-file "connector/apiProperties.json"
-
-# 更新（例如更新 Client Secret）
-& $pac connector update `
-  --connector-id "<connector-id>" `
-  --api-definition-file "connector/apiDefinition.swagger.json" `
-  --api-properties-file "connector/apiProperties.json"
+```
+DEVELOPER_TOKEN_NOT_APPROVED
 ```
 
-> ⚠️ Client Secret 僅在執行 pac CLI 時暫時寫入 `apiProperties.json`，執行後立刻清除，絕對不 commit 到 GitHub。
+代表 Developer Token 目前為「測試帳戶（Test Account）」層級，只能存取 Google Ads 官方的 Test Account，無法查詢一般廣告帳戶。過程中也曾遇到 `DEVELOPER_TOKEN_INVALID`，確認是 header 傳送方式或快取問題，修正後恢復為 `DEVELOPER_TOKEN_NOT_APPROVED`（OAuth 與 Token 本身均正常）。
+
+**根本原因：** 並非所有 Google Ads 帳戶都有 API Center。自行建立或命名的 MCC（管理帳戶）不等於 Google Ads 官方的 Test Account。Developer Token 為測試帳戶層級時，必須搭配 Google Ads 官方「Test Manager Account」下建立的「Test Client Account」才能成功呼叫 API。
+
+**解法：**
+1. 確認持有 Developer Token 的 Google Ads 帳戶（需能開啟 API Center）
+2. 在該帳戶下建立官方 **Test Manager Account**（Google Ads → 工具 → API Center → Test Accounts）
+3. 在 Test Manager Account 下建立 **Test Client Account**
+4. Custom Connector 呼叫時傳入：
+   - `customerId`：Test Client Account ID（去除 dash，純數字）
+   - `login-customer-id`：Test Manager Account ID（去除 dash，純數字）
+   - `developer-token`：原始帳戶的 Developer Token
+
+> **注意：** Test Account 不會有真實投放資料（無 Campaign、impressions、clicks、cost）。Campaign Query 回傳空 `results` 是正常現象，監控邏輯須以 MockData 驗證。
 
 ---
 
-### 限制 3：policyTemplateInstances 衝突
+### 限制 3：Solution 匯出時 Custom Connector 未納入
 
-**問題：** pac CLI 建立 Connector 時出現 `Ambiguous policy sections defined for policy template 'setheader'` 錯誤。
+**問題：** 匯出 Solution 時出現錯誤：
 
-**根本原因：** `apiDefinition.swagger.json` 已將 `developer-token` 定義為 Header 參數，`apiProperties.json` 又同時有 `setheader` policy 設定同一個 header，兩邊衝突。
-
-**解法：** 清空 `apiProperties.json` 的 `policyTemplateInstances` 陣列，改由 Flow 在呼叫 Action 時直接傳入 `developer-token`。
-
----
-
-### 限制 4：redirect_uri_mismatch
-
-**問題：** 建立 Connection 授權時，Google 回傳 `400: redirect_uri_mismatch`。
-
-**解法：** 在 GCP → Credentials → OAuth Client → Authorized redirect URIs 新增：
 ```
-https://global.consent.azure-apim.net/redirect
-https://global.consent.azure-apim.net/redirect/<connector-logical-name>
+Exporting connection reference ... for a custom connector requires the custom connector to be added to the solution.
 ```
+
+**根本原因：** Flow 用到了 Custom Connector 的 Connection Reference，但 Custom Connector 本身未被加入同一個 Dataverse Solution。
+
+**解法：**
+1. Solutions → 打開對應的 Solution
+2. Add existing（新增現有）→ Automation → Custom connector
+3. 選取 Google Ads Custom Connector → 加入 Solution
+4. 同樣步驟將 Foundry GPT API Connector 也加入 Solution
+5. 確認 Solution 至少包含：Cloud Flow、Custom Connector（×2）、Connection Reference（×3）
+6. 再重新匯出
 
 ---
 
